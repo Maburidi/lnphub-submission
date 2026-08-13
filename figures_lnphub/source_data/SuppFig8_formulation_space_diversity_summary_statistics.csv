@@ -1,0 +1,8 @@
+field,n,median,q1,q3,iqr,min,max
+il_mol_ratio,22549,35.0,35.0,50.0,15.0,10.0,100.0
+helper_lipid_mol_ratio,22451,16.0,10.0,16.407726385,6.407726385,0.0,50.0
+cholesterol_mol_ratio,22451,46.5,38.5,46.5,8.0,0.0,79.8
+peg_lipid_mol_ratio,22451,2.5,1.5,2.5,1.0,0.0,18.1
+il_to_nucleic_acid_mass_ratio,22488,10.0,10.0,10.0,0.0,0.856246851,44.58368421
+il_to_nucleic_acid_charge_ratio,1694,5.67,5.67,9.0,3.33,0.45,12.0
+total_lipid_to_cargo_ratio,2982,20.0,10.0,20.0,10.0,7.5,40.0

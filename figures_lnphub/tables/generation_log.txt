@@ -1,0 +1,88 @@
+LNPHub figure generation started 2026-08-13T20:18:35
+Input CSV: /Users/maburidi/Desktop/NUS/Postdoc_Project/NewDatabase/lnphub_master_v2.0.0.csv
+
+Package versions
+python: 3.12.13
+pandas: 3.0.5
+numpy: 2.5.2
+matplotlib: 3.11.1
+seaborn: 0.13.2
+rdkit: available
+umap: 0.5.12
+
+Generated Fig2a_dataset_scale
+Generated Fig2b_study_dimension_heatmap
+Generated Fig2c_experimental_landscape
+Generated Fig2d_biological_landscape
+Generated Fig2f_structural_diversity_alluvial
+Generated Fig2g_outcome_landscape
+
+Generated figure files
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2a_dataset_scale.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2a_dataset_scale.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2a_dataset_scale.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2b_study_dimension_heatmap.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2b_study_dimension_heatmap.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2b_study_dimension_heatmap.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2c_experimental_landscape.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2c_experimental_landscape.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2c_experimental_landscape.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2d_biological_landscape.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2d_biological_landscape.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2d_biological_landscape.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2e_chemical_space_il_class.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2e_chemical_space_il_class.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2e_chemical_space_il_class.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2f_structural_diversity_alluvial.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2f_structural_diversity_alluvial.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2f_structural_diversity_alluvial.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2g_outcome_landscape.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2g_outcome_landscape.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/panels/Fig2g_outcome_landscape.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/main/Figure2_LNPHub_multidimensional_landscape.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/main/Figure2_LNPHub_multidimensional_landscape.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/main/Figure2_LNPHub_multidimensional_landscape.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig1_dataset_contribution_by_study.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig1_dataset_contribution_by_study.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig1_dataset_contribution_by_study.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig2_field_level_coverage_heatmap.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig2_field_level_coverage_heatmap.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig2_field_level_coverage_heatmap.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig3_biological_model_distribution.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig3_biological_model_distribution.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig3_biological_model_distribution.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig4_biological_target_distribution.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig4_biological_target_distribution.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig4_biological_target_distribution.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig5_cargo_experimental_setting_matrix.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig5_cargo_experimental_setting_matrix.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig5_cargo_experimental_setting_matrix.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig6_biological_target_administration_route.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig6_biological_target_administration_route.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig6_biological_target_administration_route.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig7_physicochemical_distributions.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig7_physicochemical_distributions.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig7_physicochemical_distributions.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig8_formulation_space_diversity.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig8_formulation_space_diversity.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig8_formulation_space_diversity.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig9_ionizable_lipid_taxonomy.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig9_ionizable_lipid_taxonomy.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig9_ionizable_lipid_taxonomy.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig11_delivery_distributions_by_study.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig11_delivery_distributions_by_study.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig11_delivery_distributions_by_study.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig12_biological_outcome_coverage_by_study.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig12_biological_outcome_coverage_by_study.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig12_biological_outcome_coverage_by_study.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig13_missingness_completeness_landscape.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig13_missingness_completeness_landscape.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig13_missingness_completeness_landscape.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig14_temporal_growth_lnp_corpus.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig14_temporal_growth_lnp_corpus.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig14_temporal_growth_lnp_corpus.png
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig10_chemical_space_annotations.pdf
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig10_chemical_space_annotations.svg
+/Users/maburidi/Documents/lnphub-submission/figures_lnphub/supplementary/Supplementary_Fig10_chemical_space_annotations.png
+
+LNPHub figure generation finished 2026-08-13T20:18:54

@@ -1,0 +1,164 @@
+DATASET SCALE
+-------------
+total records: 23682
+studies: 60
+publications: 60
+unique LNPs: 21197
+unique ionizable lipids: 14993
+
+CHEMICAL DIVERSITY
+------------------
+il_class:heterocyclic lipid: 3713 (15.7% of all records)
+il_class:biodegradable amino lipid: 3358 (14.2% of all records)
+il_class:amino lipid: 3152 (13.3% of all records)
+il_class:biodegradable lipidoid: 2044 (8.6% of all records)
+il_class:biodegradable branched lipid: 1989 (8.4% of all records)
+il_class:biodegradable lipid: 1643 (6.9% of all records)
+il_class:biodegradable dendrimeric lipid: 1596 (6.7% of all records)
+il_class:multitailed lipidoid: 1200 (5.1% of all records)
+il_class:DLin-MC3-DMA: 1110 (4.7% of all records)
+il_class:phospholipid: 572 (2.4% of all records)
+il_class:amino lipidoid: 547 (2.3% of all records)
+il_class:thiosuccinimide lipid: 374 (1.6% of all records)
+il_class:lipoic acid-derived degradable lipid: 290 (1.2% of all records)
+il_class:biodegradable dendron-like lipid: 270 (1.1% of all records)
+il_class:HEPES-derived biodegradable lipid: 260 (1.1% of all records)
+il_class:siloxane-based lipidoid: 252 (1.1% of all records)
+il_class:1,2-diester lipid: 248 (1.0% of all records)
+il_class:paracyclophane-based lipid: 180 (0.8% of all records)
+il_class:amidine-incorporated degradable lipid: 170 (0.7% of all records)
+il_class:branched lipid: 140 (0.6% of all records)
+il_class:aminophosphonate-derived lipid: 134 (0.6% of all records)
+il_class:dendrimeric lipid: 102 (0.4% of all records)
+il_class:thiolactone-based biodegradable lipid: 91 (0.4% of all records)
+il_class:zwitterionic amino lipid: 72 (0.3% of all records)
+il_class:biodegradable branched lipidoid: 60 (0.3% of all records)
+il_class:aromatic lipid: 58 (0.2% of all records)
+il_class:vitamin B5-derived lipid: 36 (0.2% of all records)
+il_class:biomimetic lipid: 13 (0.1% of all records)
+il_class:OF-02: 8 (0.0% of all records)
+reaction_type:Ugi-3CR: 5069 (21.4% of all records)
+reaction_type:Ugi-4CR: 4078 (17.2% of all records)
+reaction_type:Not reported: 2916 (12.3% of all records)
+reaction_type:Michael addition: 2189 (9.2% of all records)
+reaction_type:multi-step/other: 2122 (9.0% of all records)
+reaction_type:multi-step dendrimer synthesis: 1968 (8.3% of all records)
+reaction_type:reductive amination: 1344 (5.7% of all records)
+reaction_type:A3-coupling: 774 (3.3% of all records)
+reaction_type:epoxide ring-opening: 697 (2.9% of all records)
+reaction_type:phospholane-based amine conjugation: 572 (2.4% of all records)
+reaction_type:DIC-mediated coupling: 407 (1.7% of all records)
+reaction_type:NHS-ester/maleimide conjugation: 374 (1.6% of all records)
+reaction_type:Mannich-3CR: 285 (1.2% of all records)
+reaction_type:multiple/row-specific: 252 (1.1% of all records)
+reaction_type:Passerini-3CR: 177 (0.7% of all records)
+reaction_type:T-MCR (amine-thiol-acrylate): 170 (0.7% of all records)
+reaction_type:enzyme-catalyzed esterification: 144 (0.6% of all records)
+reaction_type:multi-step modular synthesis: 131 (0.6% of all records)
+reaction_type:thiol-yne click: 13 (0.1% of all records)
+il_architecture_type:head–linker–multi-tail: 10029 (42.3% of all records)
+il_architecture_type:head–linker–two-tail: 8201 (34.6% of all records)
+il_architecture_type:head–tailA–tailB: 2865 (12.1% of all records)
+il_architecture_type:head–linker–tail: 2577 (10.9% of all records)
+il_architecture_type:Not reported: 10 (0.0% of all records)
+il_tail_count:1.0: 11115 (46.9% of all records)
+il_tail_count:2.0: 7204 (30.4% of all records)
+il_tail_count:Not reported: 4491 (19.0% of all records)
+il_tail_count:4.0: 388 (1.6% of all records)
+il_tail_count:3.0: 267 (1.1% of all records)
+il_tail_count:5.0: 145 (0.6% of all records)
+il_tail_count:6.0: 72 (0.3% of all records)
+
+EXPERIMENTAL DIVERSITY
+----------------------
+experimental_setting:in vitro: 20015 (84.5% of all records)
+experimental_setting:in vivo: 3576 (15.1% of all records)
+experimental_setting:Not reported: 54 (0.2% of all records)
+experimental_setting:ex vivo: 37 (0.2% of all records)
+cargo_type:mRNA: 19002 (80.2% of all records)
+cargo_type:siRNA: 3355 (14.2% of all records)
+cargo_type:pDNA: 1093 (4.6% of all records)
+cargo_type:mRNA/sgRNA: 73 (0.3% of all records)
+cargo_type:Not reported: 65 (0.3% of all records)
+cargo_type:siRNA/mRNA: 39 (0.2% of all records)
+cargo_type:RNA: 31 (0.1% of all records)
+cargo_type:RNP: 24 (0.1% of all records)
+route_of_administration:intravenous: 2295 (64.2% of route-bearing records)
+route_of_administration:intramuscular: 1025 (28.7% of route-bearing records)
+route_of_administration:topical transdermal: 83 (2.3% of route-bearing records)
+route_of_administration:intratracheal: 66 (1.8% of route-bearing records)
+route_of_administration:intradermal: 66 (1.8% of route-bearing records)
+route_of_administration:inhalation: 38 (1.1% of route-bearing records)
+route_of_administration:subcutaneous: 3 (0.1% of route-bearing records)
+route_of_administration:missing/not applicable: 20106 (84.9% of all records)
+
+BIOLOGICAL DIVERSITY
+--------------------
+unique biological models: 40
+top biological_model:HeLa: 7873
+top biological_model:A549: 2526
+top biological_model:HepG2: 2255
+top biological_model:DC2.4: 1843
+top biological_model:Mouse C57BL/6: 1814
+top biological_model:RAW264.7: 1254
+top biological_model:IGROV1: 1206
+top biological_model:BEAS-2B: 1022
+top biological_model:Mouse BALBc: 751
+top biological_model:Mouse C57BL/6J: 744
+unique biological targets: 75
+top biological_target:lung epithelium: 1836
+top biological_target:bronchial epithelium: 1074
+top biological_target:muscle: 1003
+top biological_target:liver: 942
+top biological_target:multiorgan: 331
+top biological_target:spleen: 286
+top biological_target:colon cancer cells: 269
+top biological_target:lung: 152
+top biological_target:dendritic cells: 140
+top biological_target:bone marrow: 139
+
+PHYSICOCHEMICAL COVERAGE
+------------------------
+particle_size_nm:observations: 4772 (studies=51; median=114.3; IQR=87.2-155)
+pdi:observations: 4103 (studies=43; median=0.152; IQR=0.12-0.22)
+zeta_potential_mv:observations: 3335 (studies=37; median=0; IQR=-5.6-4.3)
+encapsulation_efficiency_percent:observations: 2798 (studies=35; median=82.9; IQR=67.2-92)
+measured_pka:observations: 1419 (studies=31; median=6.58; IQR=6.28-6.58)
+
+BIOLOGICAL OUTCOMES
+-------------------
+particle_size_nm: 4772 (family=Physicochemical; studies=51; unique_LNPs=3154)
+pdi: 4103 (family=Physicochemical; studies=43; unique_LNPs=2594)
+zeta_potential_mv: 3335 (family=Physicochemical; studies=37; unique_LNPs=1754)
+encapsulation_efficiency_percent: 2798 (family=Physicochemical; studies=35; unique_LNPs=1441)
+measured_pka: 1419 (family=Physicochemical; studies=31; unique_LNPs=828)
+delivery: 21157 (family=Delivery; studies=53; unique_LNPs=20064)
+viability_igrov1_percent: 914 (family=Viability; studies=7; unique_LNPs=914)
+viability_mtt_0_5_ug_per_ml: 34 (family=Viability; studies=1; unique_LNPs=17)
+viability_mtt_5_ug_per_ml: 86 (family=Viability; studies=1; unique_LNPs=40)
+toxicity_cera_umol_per_l: 10 (family=Toxicity; studies=1; unique_LNPs=8)
+toxicity_hemolysis_percent: 154 (family=Toxicity; studies=3; unique_LNPs=119)
+toxicity_urea_umol_per_l: 10 (family=Toxicity; studies=1; unique_LNPs=8)
+toxicity_alt_u_per_l: 58 (family=Toxicity; studies=17; unique_LNPs=43)
+toxicity_ast_u_per_l: 52 (family=Toxicity; studies=16; unique_LNPs=40)
+toxicity_bun_mg_per_dl: 7 (family=Toxicity; studies=4; unique_LNPs=7)
+editing_gfp_negative_cells_percent: 35 (family=Editing; studies=1; unique_LNPs=25)
+editing_relative_fvii_ec50_mg_per_kg: 93 (family=Editing; studies=3; unique_LNPs=75)
+base_editing_percent: 139 (family=Editing; studies=1; unique_LNPs=139)
+cellular_metabolic_uptake_percent: 90 (family=Uptake; studies=1; unique_LNPs=90)
+uptake_cy5_mluc_lnps_percent: 39 (family=Uptake; studies=1; unique_LNPs=3)
+immune_tnf_alpha_pg_ml: 46 (family=Immune; studies=13; unique_LNPs=30)
+immune_il1a_pg_ml: 22 (family=Immune; studies=3; unique_LNPs=13)
+immune_il6_pg_ml: 61 (family=Immune; studies=12; unique_LNPs=29)
+immune_ifn_gamma_pg_ml: 29 (family=Immune; studies=7; unique_LNPs=20)
+immune_gm_csf_pg_ml: 9 (family=Immune; studies=4; unique_LNPs=8)
+protein_abundance_value: 675 (family=Other; studies=3; unique_LNPs=675)
+mrna_binding_efficiency_percent: 24 (family=Other; studies=2; unique_LNPs=24)
+gfp_mfi_transfection: 90 (family=Other; studies=1; unique_LNPs=90)
+
+DATA COVERAGE
+-------------
+average populated outcome dimensions per study: 4.68
+median populated outcome dimensions per study: 5
+range populated outcome dimensions per study: 3-7
+studies covering greatest number of dimensions: LNPhub_NG_2025; LNPhub_GN_2025; LNPhub_XG_2025; LNPhub_QL_2026; LNPhub_ZC_2023; LNPhub_NC_2024; LNPhub_SW_2024; LNPhub_XH_2024c; LNPhub_SL_2021; LNPhub_YX_2023

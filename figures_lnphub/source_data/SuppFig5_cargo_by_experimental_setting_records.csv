@@ -1,0 +1,9 @@
+cargo_type,Not reported,ex_vivo,in_vitro,in_vivo
+Not reported,25,1,39,0
+RNA,0,0,0,31
+RNP,0,0,0,24
+mRNA,29,36,15558,3379
+mRNA/sgRNA,0,0,12,61
+pDNA,0,0,1093,0
+siRNA,0,0,3313,42
+siRNA/mRNA,0,0,0,39
