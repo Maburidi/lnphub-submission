@@ -1,0 +1,5 @@
+encoder,path,exists,size_MB
+AGILE,/content/notebooks/encoder_repos/AGILE/ckpt/pretrained_agile_60k/checkpoints/model.pth,True,9.649
+MolCLR_GIN,/content/notebooks/encoder_repos/MolCLR/ckpt/pretrained_gin/checkpoints/model.pth,True,9.65
+KPGT,/content/notebooks/encoder_repos/KPGT/models/pretrained/base/base.pth,False,
+LiON,/content/notebooks/encoder_repos/LNPDB/data/LNPDB_for_LiON/single_split/trained_model_checkpoints,True,

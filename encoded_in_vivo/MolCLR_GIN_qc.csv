@@ -1,0 +1,2 @@
+encoder,rows,vector_dim,finite_fraction,nan_fraction,all_zero,output_file
+MolCLR_GIN,852,512,1.0,0.0,False,/content/notebooks/encoded_in_vivo/MolCLR_GIN_encoder_vectors.parquet

@@ -1,0 +1,2 @@
+encoder,rows,vector_dim,finite_fraction,nan_fraction,all_zero,output_file
+MoLFormer,852,768,1.0,0.0,False,/content/notebooks/encoded_in_vivo/MoLFormer_encoder_vectors.parquet

@@ -1,0 +1,7 @@
+file,rows,vector_dim,finite_fraction,nan_fraction,all_zero,zero_variance_dims
+AGILE_encoder_vectors.parquet,10906,512,1.0,0.0,False,0
+ChemBERTa_MTR_encoder_vectors.parquet,10906,384,1.0,0.0,False,0
+LiON_encoder_vectors.parquet,10906,300,1.0,0.0,False,20
+MoLFormer_encoder_vectors.parquet,10906,768,1.0,0.0,False,0
+MolCLR_GIN_encoder_vectors.parquet,10906,512,1.0,0.0,False,0
+Uni_Mol_encoder_vectors.parquet,10906,512,1.0,0.0,False,0

@@ -1,0 +1,5 @@
+encoder,repo,checkpoint_expected,checkpoint_present,encoding_status
+AGILE,/content/notebooks/encoder_repos/AGILE,/content/notebooks/encoder_repos/AGILE/ckpt/pretrained_agile_60k,True,needs original AGILE checkpoint/inference adapter before vectors can be generated
+KPGT,/content/notebooks/encoder_repos/KPGT,/content/notebooks/encoder_repos/KPGT/models,False,needs KPGT pretrained model zip placed under KPGT/models before vectors can be generated
+MolCLR_GIN,/content/notebooks/encoder_repos/MolCLR,/content/notebooks/encoder_repos/MolCLR/ckpt/pretrained_gin,True,needs MolCLR pretrained GIN checkpoint and compatible PyG environment before vectors can be generated
+LiON,/content/notebooks/encoder_repos/LNPDB,/content/notebooks/encoder_repos/LNPDB/data/LNPDB_for_LiON,True,"LiON is formulation/checkpoint-specific; use after matching required LiON input schema, not just il_smiles"
