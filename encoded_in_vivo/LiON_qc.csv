@@ -1,0 +1,2 @@
+encoder,rows,vector_dim,finite_fraction,nan_fraction,all_zero,output_file
+LiON,852,300,1.0,0.0,False,/content/notebooks/encoded_in_vivo/LiON_encoder_vectors.parquet

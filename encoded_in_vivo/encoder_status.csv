@@ -1,0 +1,9 @@
+encoder,status,note,output_file
+ChemBERTa_MTR,encoded,completed,/content/notebooks/encoded_in_vivo/ChemBERTa_MTR_encoder_vectors.parquet
+MoLFormer,encoded,completed,/content/notebooks/encoded_in_vivo/MoLFormer_encoder_vectors.parquet
+Uni_Mol,failed,"TypeError('list indices must be integers or slices, not str')",
+AGILE,encoded,completed; failed_graphs=0,/content/notebooks/encoded_in_vivo/AGILE_encoder_vectors.parquet
+MolCLR_GIN,encoded,completed; failed_graphs=0,/content/notebooks/encoded_in_vivo/MolCLR_GIN_encoder_vectors.parquet
+KPGT,failed,missing checkpoint base.pth; place it at /content/notebooks/encoder_repos/KPGT/models/pretrained/base/base.pth,
+LiON,encoded,completed,/content/notebooks/encoded_in_vivo/LiON_encoder_vectors.parquet
+Uni_Mol,encoded,completed,/content/notebooks/encoded_in_vivo/Uni_Mol_encoder_vectors.parquet

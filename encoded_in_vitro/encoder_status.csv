@@ -1,0 +1,18 @@
+encoder,status,message,output_file
+ChemBERTa_MTR,encoded,completed,/content/notebooks/encoded_in_vitro/ChemBERTa_MTR_encoder_vectors.parquet
+MoLFormer,encoded,completed,/content/notebooks/encoded_in_vitro/MoLFormer_encoder_vectors.parquet
+Uni_Mol,encoded,completed,/content/notebooks/encoded_in_vitro/Uni_Mol_encoder_vectors.parquet
+AGILE,checked,needs original AGILE checkpoint/inference adapter before vectors can be generated,
+KPGT,checked,needs KPGT pretrained model zip placed under KPGT/models before vectors can be generated,
+MolCLR_GIN,checked,needs MolCLR pretrained GIN checkpoint and compatible PyG environment before vectors can be generated,
+LiON,checked,"LiON is formulation/checkpoint-specific; use after matching required LiON input schema, not just il_smiles",
+AGILE,encoded,completed; failed_graphs=0,/content/notebooks/encoded_in_vitro/AGILE_encoder_vectors.parquet
+MolCLR_GIN,encoded,completed; failed_graphs=0,/content/notebooks/encoded_in_vitro/MolCLR_GIN_encoder_vectors.parquet
+KPGT,failed,missing official checkpoint models/pretrained/base/base.pth; download from the Figshare link in the KPGT README and place it there,
+KPGT,failed,missing official checkpoint models/pretrained/base/base.pth; download from the Figshare link in the KPGT README and place it there,
+AGILE,encoded,completed; failed_graphs=0,/content/notebooks/encoded_in_vitro/AGILE_encoder_vectors.parquet
+MolCLR_GIN,encoded,completed; failed_graphs=0,/content/notebooks/encoded_in_vitro/MolCLR_GIN_encoder_vectors.parquet
+KPGT,failed,missing checkpoint base.pth; place it at /content/notebooks/encoder_repos/KPGT/models/pretrained/base/base.pth,
+LiON,failed,chemprop_fingerprint failed with code 1,
+LiON,failed,chemprop_fingerprint failed with code 1,
+LiON,encoded,completed,/content/notebooks/encoded_in_vitro/LiON_encoder_vectors.parquet
