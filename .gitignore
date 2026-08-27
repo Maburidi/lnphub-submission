@@ -3,3 +3,7 @@
 __pycache__/
 *.pyc
 *.egg-info/
+
+# Generated training outputs
+results/
+trained_oracles/
