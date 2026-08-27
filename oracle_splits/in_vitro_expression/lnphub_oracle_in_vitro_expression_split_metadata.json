@@ -6,12 +6,16 @@
   "group_col": "study_id",
   "target_col": "delivery",
   "test_size": 0.15,
+  "test_groups": [
+    "LNPhub_JL_2024",
+    "LNPhub_BL_2024"
+  ],
   "n_folds": 5,
   "seed": 7,
   "rows_shuffled_after_split": true,
   "rows_total": 10906,
-  "rows_trainval": 8644,
-  "rows_untouched_test": 2262,
+  "rows_trainval": 9723,
+  "rows_untouched_test": 1183,
   "groups_trainval": 8,
   "groups_untouched_test": 2,
   "trainval_file": "oracle_splits/in_vitro_expression/lnphub_oracle_in_vitro_expression_trainval_5fold.csv",

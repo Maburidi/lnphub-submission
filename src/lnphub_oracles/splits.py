@@ -33,6 +33,7 @@ def assign_untouched_test_and_cv_folds(
     group_col: str = "study_id",
     test_size: float = 0.15,
     n_folds: int = 5,
+    test_groups: list[str] | None = None,
 ) -> pd.DataFrame:
     """Assign one untouched test split and CV folds within the remaining rows."""
     if not 0 < test_size < 1:
@@ -44,7 +45,31 @@ def assign_untouched_test_and_cv_folds(
     out["split"] = "trainval"
     out["cv_fold"] = -1
 
-    if group_col in frame.columns and frame[group_col].nunique(dropna=True) >= n_folds + 1:
+    if test_groups:
+        if group_col not in frame.columns:
+            raise ValueError(f"Cannot use explicit test groups: missing {group_col}")
+        groups = frame[group_col].astype(str).fillna("missing").to_numpy()
+        available = set(groups)
+        requested = {str(g) for g in test_groups}
+        missing = sorted(requested - available)
+        if missing:
+            raise ValueError(f"Requested test group(s) not found in {group_col}: {missing}")
+        test_mask = np.isin(groups, sorted(requested))
+        if test_mask.all():
+            raise ValueError("Explicit test groups include all rows; no trainval rows remain.")
+        out.loc[test_mask, "split"] = "untouched_test"
+        trainval_idx = np.where(~test_mask)[0]
+
+        trainval_groups = pd.Series(groups[trainval_idx], index=trainval_idx)
+        group_sizes = trainval_groups.value_counts().sample(frac=1, random_state=seed).sort_values(ascending=False)
+        fold_load = {i: 0 for i in range(n_folds)}
+        group_to_fold = {}
+        for group, size in group_sizes.items():
+            fold = min(fold_load, key=fold_load.get)
+            group_to_fold[group] = fold
+            fold_load[fold] += int(size)
+        out.loc[trainval_idx, "cv_fold"] = trainval_groups.map(group_to_fold).astype(int).to_numpy()
+    elif group_col in frame.columns and frame[group_col].nunique(dropna=True) >= n_folds + 1:
         groups = frame[group_col].astype(str).fillna("missing").to_numpy()
         splitter = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=seed)
         trainval_idx, test_idx = next(splitter.split(np.arange(len(frame)), groups=groups))

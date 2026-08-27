@@ -19,6 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--group-col", default="study_id")
     parser.add_argument("--target-col", default="delivery")
     parser.add_argument("--test-size", type=float, default=0.15)
+    parser.add_argument("--test-groups", nargs="*", default=None)
     parser.add_argument("--n-folds", type=int, default=5)
     parser.add_argument("--seed", type=int, default=7)
     return parser.parse_args()
@@ -42,6 +43,7 @@ def main() -> None:
         group_col=args.group_col,
         test_size=args.test_size,
         n_folds=args.n_folds,
+        test_groups=args.test_groups,
     )
     assignment[args.id_col] = frame[args.id_col].astype(str).to_numpy()
     assignment[args.group_col] = frame[args.group_col].astype(str).to_numpy()
@@ -103,6 +105,7 @@ def main() -> None:
         "group_col": args.group_col,
         "target_col": args.target_col,
         "test_size": args.test_size,
+        "test_groups": args.test_groups or [],
         "n_folds": args.n_folds,
         "seed": args.seed,
         "rows_shuffled_after_split": True,
