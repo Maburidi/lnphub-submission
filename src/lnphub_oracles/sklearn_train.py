@@ -12,7 +12,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from .io_utils import ensure_dir, method_dir, now_utc, write_json
-from .metrics import regression_metrics
+from .metrics import format_regression_metrics, regression_metrics
 from .splits import cv_fold_indices
 
 
@@ -75,12 +75,15 @@ def train_sklearn_oracle(
 
     cv_predictions = []
     fold_metrics = {}
+    print(f"{method_name}: training {len(cv_fold_indices(frame, fold_col=fold_col))} CV folds", flush=True)
     for fold, train_idx, val_idx in cv_fold_indices(frame, fold_col=fold_col):
+        print(f"{method_name} | fold {fold}: train={len(train_idx):,}, val={len(val_idx):,}", flush=True)
         model = make_estimator(estimator_kind, seed + fold)
         model.fit(X[train_idx], y[train_idx])
         pred = model.predict(X[val_idx])
         split = f"fold_{fold}"
         fold_metrics[split] = regression_metrics(y[val_idx], pred)
+        print(f"{method_name} | {split}: {format_regression_metrics(fold_metrics[split])}", flush=True)
         part = frame.iloc[val_idx][[c for c in ["record_id", "study_id", "lnp_id", "il_id", "il_smiles"] if c in frame.columns]].copy()
         part["split"] = split
         part["cv_fold"] = fold
@@ -89,6 +92,7 @@ def train_sklearn_oracle(
         cv_predictions.append(part)
 
     final_model = make_estimator(estimator_kind, seed)
+    print(f"{method_name}: fitting final trainval model on {len(y):,} rows", flush=True)
     final_model.fit(X, y)
 
     test_metrics = None
@@ -101,6 +105,7 @@ def train_sklearn_oracle(
         test_frame = test_frame.loc[test_ok].reset_index(drop=True)
         pred = final_model.predict(X_test)
         test_metrics = regression_metrics(y_test, pred)
+        print(f"{method_name} | untouched_test: {format_regression_metrics(test_metrics)}", flush=True)
         part = test_frame[[c for c in ["record_id", "study_id", "lnp_id", "il_id", "il_smiles"] if c in test_frame.columns]].copy()
         part["split"] = "untouched_test"
         part["y_true"] = y_test
@@ -115,6 +120,8 @@ def train_sklearn_oracle(
     fold_df = pd.DataFrame([v for k, v in fold_metrics.items()])
     for stat_name, values in [("cv_mean", fold_df.mean(numeric_only=True)), ("cv_std", fold_df.std(numeric_only=True))]:
         metric_rows.append({"split": stat_name, **values.to_dict()})
+    print(f"{method_name} | cv_mean: {format_regression_metrics(metric_rows[-2])}", flush=True)
+    print(f"{method_name}: saved outputs -> {out_dir}", flush=True)
 
     joblib.dump(final_model, out_dir / "model.joblib")
     pd.concat(cv_predictions, ignore_index=True).to_csv(out_dir / "cv_predictions.csv", index=False)

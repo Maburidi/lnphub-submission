@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader, Dataset, Subset
 
 from .features import smiles_series, valid_smiles_mask
 from .io_utils import ensure_dir, method_dir, now_utc, read_table, write_json
-from .metrics import regression_metrics
+from .metrics import format_regression_metrics, regression_metrics
 from .splits import cv_fold_indices
 
 
@@ -283,6 +283,10 @@ def save_outputs(out_dir, method_name, model, frame, split_metrics, cv_pred_rows
     out.update({f"cv_mean_{k}": v for k, v in cv_mean.items() if k != "split"})
     if "untouched_test" in split_metrics:
         out.update({f"untouched_test_{k}": v for k, v in split_metrics["untouched_test"].items()})
+    print(f"{method_name} | cv_mean: {format_regression_metrics(cv_mean)}", flush=True)
+    if "untouched_test" in split_metrics:
+        print(f"{method_name} | untouched_test: {format_regression_metrics(split_metrics['untouched_test'])}", flush=True)
+    print(f"{method_name}: saved outputs -> {out_dir}", flush=True)
     return out
 
 
@@ -307,6 +311,7 @@ def train_hf(method_key, frame, test_frame, y_z, test_y_z, args, device, y_mean,
         yt, yp = yt_z * y_std + y_mean, yp_z * y_std + y_mean
         split = f"fold_{fold}"
         split_metrics[split] = regression_metrics(yt, yp)
+        print(f"{method_name} | {split}: {format_regression_metrics(split_metrics[split])}", flush=True)
         part = frame.iloc[val_idx][[c for c in ["record_id", "study_id", "lnp_id", "il_id", "il_smiles"] if c in frame.columns]].copy()
         part["split"] = split
         part["cv_fold"] = fold
@@ -370,6 +375,7 @@ def train_pretrained_gnn(method_key, frame, test_frame, y_z, test_y_z, args, dev
         yt, yp = yt_z * y_std + y_mean, yp_z * y_std + y_mean
         split = f"fold_{fold}"
         split_metrics[split] = regression_metrics(yt, yp)
+        print(f"{method_name} | {split}: {format_regression_metrics(split_metrics[split])}", flush=True)
         part = frame.iloc[val_idx][[c for c in ["record_id", "study_id", "lnp_id", "il_id", "il_smiles"] if c in frame.columns]].copy()
         part["split"] = split
         part["cv_fold"] = fold

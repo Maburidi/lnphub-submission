@@ -28,3 +28,14 @@ def regression_metrics(y_true, y_pred) -> dict[str, float]:
         "pearson": pearson,
         "spearman": spearman,
     }
+
+
+def format_regression_metrics(metrics: dict[str, float]) -> str:
+    return (
+        f"n={metrics.get('n', 0):,.0f} | "
+        f"RMSE={metrics.get('rmse', np.nan):.4g} | "
+        f"MAE={metrics.get('mae', np.nan):.4g} | "
+        f"R2={metrics.get('r2', np.nan):.4g} | "
+        f"Pearson={metrics.get('pearson', np.nan):.4g} | "
+        f"Spearman={metrics.get('spearman', np.nan):.4g}"
+    )

@@ -12,7 +12,7 @@ from torch_geometric.loader import DataLoader
 from .features import smiles_series
 from .graph_data import build_graphs
 from .io_utils import method_dir, now_utc, read_table, write_json
-from .metrics import regression_metrics
+from .metrics import format_regression_metrics, regression_metrics
 from .splits import cv_fold_indices
 from .torch_models import DMPNNRegressor, GCNRegressor, GINRegressor
 
@@ -121,6 +121,7 @@ def main():
             yt, yp = predict(model, loaders["val"], device)
             split = f"fold_{fold}"
             metrics[split] = regression_metrics(yt, yp)
+            print(f"{name} | {split}: {format_regression_metrics(metrics[split])}", flush=True)
             part = frame.iloc[val_idx][[c for c in ["record_id", "study_id", "lnp_id", "il_id", "il_smiles"] if c in frame.columns]].copy()
             part["split"] = split
             part["cv_fold"] = fold
@@ -135,6 +136,7 @@ def main():
             test_loader = DataLoader(test_graphs, batch_size=args.batch_size, shuffle=False)
             yt, yp = predict(final_model, test_loader, device)
             metrics["untouched_test"] = regression_metrics(yt, yp)
+            print(f"{name} | untouched_test: {format_regression_metrics(metrics['untouched_test'])}", flush=True)
             part = test_frame[[c for c in ["record_id", "study_id", "lnp_id", "il_id", "il_smiles"] if c in test_frame.columns]].copy()
             part["split"] = "untouched_test"
             part["y_true"] = yt
@@ -145,6 +147,8 @@ def main():
         metric_rows = [{"split": k, **v} for k, v in metrics.items()]
         metric_rows.append({"split": "cv_mean", **fold_df.mean(numeric_only=True).to_dict()})
         metric_rows.append({"split": "cv_std", **fold_df.std(numeric_only=True).to_dict()})
+        print(f"{name} | cv_mean: {format_regression_metrics(metric_rows[-2])}", flush=True)
+        print(f"{name}: saved outputs -> {out_dir}", flush=True)
         torch.save({"state_dict": final_model.state_dict(), "model_class": cls.__name__}, out_dir / "model.pt")
         pd.concat(cv_pred_rows, ignore_index=True).to_csv(out_dir / "cv_predictions.csv", index=False)
         pd.DataFrame(metric_rows).to_csv(out_dir / "metrics.csv", index=False)
