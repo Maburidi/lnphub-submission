@@ -22,10 +22,10 @@ def make_estimator(kind: str, seed: int):
         return Pipeline([
             ("imputer", SimpleImputer(strategy="median")),
             ("scaler", StandardScaler()),
-            ("model", MLPRegressor(hidden_layer_sizes=(512, 128), alpha=1e-4, batch_size=128, early_stopping=True, max_iter=500, random_state=seed)),
+            ("model", MLPRegressor(hidden_layer_sizes=(512, 128), alpha=1e-4, batch_size=128, early_stopping=True, max_iter=500, random_state=seed, verbose=True)),
         ])
     if kind == "random_forest":
-        return RandomForestRegressor(n_estimators=500, min_samples_leaf=2, n_jobs=-1, random_state=seed)
+        return RandomForestRegressor(n_estimators=500, min_samples_leaf=2, n_jobs=-1, random_state=seed, verbose=1)
     if kind == "xgboost":
         try:
             from xgboost import XGBRegressor
@@ -39,6 +39,7 @@ def make_estimator(kind: str, seed: int):
                 tree_method="hist",
                 random_state=seed,
                 n_jobs=-1,
+                verbosity=1,
             )
         except Exception:
             from sklearn.ensemble import HistGradientBoostingRegressor
@@ -79,7 +80,9 @@ def train_sklearn_oracle(
     for fold, train_idx, val_idx in cv_fold_indices(frame, fold_col=fold_col):
         print(f"{method_name} | fold {fold}: train={len(train_idx):,}, val={len(val_idx):,}", flush=True)
         model = make_estimator(estimator_kind, seed + fold)
+        print(f"{method_name} | fold {fold}: fitting model...", flush=True)
         model.fit(X[train_idx], y[train_idx])
+        print(f"{method_name} | fold {fold}: predicting validation rows...", flush=True)
         pred = model.predict(X[val_idx])
         split = f"fold_{fold}"
         fold_metrics[split] = regression_metrics(y[val_idx], pred)
@@ -94,6 +97,7 @@ def train_sklearn_oracle(
     final_model = make_estimator(estimator_kind, seed)
     print(f"{method_name}: fitting final trainval model on {len(y):,} rows", flush=True)
     final_model.fit(X, y)
+    print(f"{method_name}: final trainval model fit complete", flush=True)
 
     test_metrics = None
     if X_test is not None and y_test is not None and test_frame is not None:

@@ -53,9 +53,9 @@ def main() -> None:
         test_y = test_y[test_ok]
         test_smiles = test_smiles.loc[test_ok].reset_index(drop=True)
 
-    print(f"Rows used: {len(frame):,}")
+    print(f"Rows used: {len(frame):,}", flush=True)
     if test_frame is not None:
-        print(f"Untouched test rows: {len(test_frame):,}")
+        print(f"Untouched test rows: {len(test_frame):,}", flush=True)
     cache: dict[str, tuple[np.ndarray, list[str]]] = {}
     test_cache: dict[str, tuple[np.ndarray, list[str]]] = {}
     rows = []
@@ -63,13 +63,16 @@ def main() -> None:
         if key not in METHODS:
             raise ValueError(f"Unknown method: {key}. Valid methods: {sorted(METHODS)}")
         method_name, feature_type, estimator_kind = METHODS[key]
-        print(f"\n=== {method_name} ===")
+        print(f"\n=== {method_name} ===", flush=True)
         if feature_type not in cache:
+            print(f"Building {feature_type} trainval features...", flush=True)
             cache[feature_type] = make_ecfp4(smiles) if feature_type == "ecfp4" else make_rdkit_descriptors(smiles)
         X, feature_columns = cache[feature_type]
+        print(f"{method_name}: feature matrix = {X.shape[0]:,} rows x {X.shape[1]:,} columns", flush=True)
         X_test = None
         if test_smiles is not None:
             if feature_type not in test_cache:
+                print(f"Building {feature_type} untouched-test features...", flush=True)
                 test_cache[feature_type] = make_ecfp4(test_smiles) if feature_type == "ecfp4" else make_rdkit_descriptors(test_smiles)
             X_test, test_feature_columns = test_cache[feature_type]
             if test_feature_columns != feature_columns:
@@ -102,11 +105,11 @@ def main() -> None:
                 "trained_at_utc": now_utc(),
                 "metadata": {"input_trainval_subset": str(args.subset), "input_untouched_test_subset": str(args.test_subset) if args.test_subset else None, "feature_type": feature_type},
             })
-            print(f"FAILED {method_name}: {reason}")
+            print(f"FAILED {method_name}: {reason}", flush=True)
             rows.append({"method": method_name, "output_dir": str(out_dir), "status": "failed", "reason": reason})
     manifest = save_manifest(rows, args.output_dir, "tabular_training_manifest.csv")
-    print("\nSaved tabular manifest:")
-    print(manifest.to_string(index=False))
+    print("\nSaved tabular manifest:", flush=True)
+    print(manifest.to_string(index=False), flush=True)
 
 
 if __name__ == "__main__":
