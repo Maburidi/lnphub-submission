@@ -1,0 +1,22 @@
+{
+  "input_subset": "data_subsets/lnphub_oracle_in_vitro_expression_gt400.csv",
+  "input_encoded_dir": "encoded_in_vitro",
+  "split_name": "in_vitro_expression",
+  "id_col": "record_id",
+  "group_col": "study_id",
+  "target_col": "delivery",
+  "test_size": 0.15,
+  "n_folds": 5,
+  "seed": 7,
+  "rows_shuffled_after_split": true,
+  "rows_total": 10906,
+  "rows_trainval": 8644,
+  "rows_untouched_test": 2262,
+  "groups_trainval": 8,
+  "groups_untouched_test": 2,
+  "trainval_file": "oracle_splits/in_vitro_expression/lnphub_oracle_in_vitro_expression_trainval_5fold.csv",
+  "untouched_test_file": "oracle_splits/in_vitro_expression/lnphub_oracle_in_vitro_expression_untouched_test.csv",
+  "assignment_file": "oracle_splits/in_vitro_expression/lnphub_oracle_in_vitro_expression_split_assignments.csv",
+  "encoded_trainval_dir": "oracle_splits/in_vitro_expression/encoded_trainval",
+  "encoded_untouched_test_dir": "oracle_splits/in_vitro_expression/encoded_untouched_test"
+}

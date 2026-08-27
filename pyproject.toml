@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lnphub-oracles"
+version = "0.1.0"
+description = "Training utilities for LNPHub regression oracles."
+requires-python = ">=3.9"
+dependencies = [
+  "joblib",
+  "matplotlib",
+  "numpy",
+  "pandas",
+  "pyarrow",
+  "rdkit-pypi",
+  "scikit-learn",
+  "scipy",
+  "seaborn",
+  "tqdm",
+]
+
+[project.optional-dependencies]
+xgboost = ["xgboost"]
+gnn = ["torch", "torch-geometric"]
+hf = ["torch", "transformers", "accelerate", "safetensors"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

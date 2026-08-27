@@ -1,0 +1,16 @@
+joblib
+matplotlib
+numpy
+pandas
+pyarrow
+rdkit-pypi
+scikit-learn
+scipy
+seaborn
+tqdm
+xgboost
+torch
+torch-geometric
+transformers
+accelerate
+safetensors
