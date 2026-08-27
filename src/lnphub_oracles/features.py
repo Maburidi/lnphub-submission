@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from rdkit import Chem, DataStructs
-from rdkit.Chem import AllChem, Descriptors
+from rdkit.Chem import Descriptors, rdFingerprintGenerator
 
 
 def smiles_series(frame: pd.DataFrame) -> pd.Series:
@@ -19,12 +19,13 @@ def valid_smiles_mask(smiles: pd.Series) -> np.ndarray:
 
 def make_ecfp4(smiles: pd.Series, n_bits: int = 2048) -> tuple[np.ndarray, list[str]]:
     vectors = np.zeros((len(smiles), n_bits), dtype=np.float32)
+    generator = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=n_bits)
     for i, smi in enumerate(smiles.astype(str)):
         mol = Chem.MolFromSmiles(smi)
         if mol is None:
             vectors[i, :] = np.nan
             continue
-        fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=n_bits)
+        fp = generator.GetFingerprint(mol)
         arr = np.zeros((n_bits,), dtype=np.int8)
         DataStructs.ConvertToNumpyArray(fp, arr)
         vectors[i, :] = arr.astype(np.float32)

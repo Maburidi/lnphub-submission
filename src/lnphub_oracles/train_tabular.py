@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from .features import make_ecfp4, make_rdkit_descriptors, smiles_series, valid_smiles_mask
-from .io_utils import read_table
+from .io_utils import method_dir, now_utc, read_table, write_json
 from .sklearn_train import save_manifest, train_sklearn_oracle
 
 
@@ -74,21 +74,36 @@ def main() -> None:
             X_test, test_feature_columns = test_cache[feature_type]
             if test_feature_columns != feature_columns:
                 raise ValueError(f"Feature mismatch for {method_name}")
-        rows.append(train_sklearn_oracle(
-            method_name=method_name,
-            X=X,
-            y=y,
-            frame=frame,
-            feature_columns=feature_columns,
-            estimator_kind=estimator_kind,
-            output_dir=args.output_dir,
-            target_col=args.target_col,
-            seed=args.seed,
-            metadata={"input_trainval_subset": str(args.subset), "input_untouched_test_subset": str(args.test_subset) if args.test_subset else None, "feature_type": feature_type},
-            X_test=X_test,
-            y_test=test_y,
-            test_frame=test_frame,
-        ))
+        try:
+            result = train_sklearn_oracle(
+                method_name=method_name,
+                X=X,
+                y=y,
+                frame=frame,
+                feature_columns=feature_columns,
+                estimator_kind=estimator_kind,
+                output_dir=args.output_dir,
+                target_col=args.target_col,
+                seed=args.seed,
+                metadata={"input_trainval_subset": str(args.subset), "input_untouched_test_subset": str(args.test_subset) if args.test_subset else None, "feature_type": feature_type},
+                X_test=X_test,
+                y_test=test_y,
+                test_frame=test_frame,
+            )
+            result["status"] = "trained"
+            rows.append(result)
+        except Exception as exc:
+            out_dir = method_dir(args.output_dir, method_name)
+            reason = repr(exc)
+            write_json(out_dir / "metadata.json", {
+                "method_name": method_name,
+                "status": "failed",
+                "reason": reason,
+                "trained_at_utc": now_utc(),
+                "metadata": {"input_trainval_subset": str(args.subset), "input_untouched_test_subset": str(args.test_subset) if args.test_subset else None, "feature_type": feature_type},
+            })
+            print(f"FAILED {method_name}: {reason}")
+            rows.append({"method": method_name, "output_dir": str(out_dir), "status": "failed", "reason": reason})
     manifest = save_manifest(rows, args.output_dir, "tabular_training_manifest.csv")
     print("\nSaved tabular manifest:")
     print(manifest.to_string(index=False))
