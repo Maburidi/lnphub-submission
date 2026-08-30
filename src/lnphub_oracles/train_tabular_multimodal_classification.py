@@ -52,6 +52,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--target-col", default="delivery_class_3")
     parser.add_argument("--multimodal-cols", nargs="+", default=DEFAULT_MULTIMODAL_COLS)
     parser.add_argument("--methods", nargs="+", default=list(METHODS))
+    parser.add_argument("--cv-description", default="leave-one-study-out CV on balanced trainval data")
     parser.add_argument("--seed", type=int, default=7)
     return parser.parse_args()
 
@@ -200,9 +201,9 @@ def main() -> None:
 
         fold_metrics = pd.DataFrame(metric_rows)
         cv_mean = fold_metrics.drop(columns=["method", "split", "fold", "validation_study"], errors="ignore").mean(numeric_only=True).to_dict()
-        cv_mean.update({"method": method_name, "split": "cv_mean", "fold": -1, "validation_study": "leave_one_study_out"})
+        cv_mean.update({"method": method_name, "split": "cv_mean", "fold": -1, "validation_study": args.cv_description})
         cv_std = fold_metrics.drop(columns=["method", "split", "fold", "validation_study"], errors="ignore").std(numeric_only=True).to_dict()
-        cv_std.update({"method": method_name, "split": "cv_std", "fold": -1, "validation_study": "leave_one_study_out"})
+        cv_std.update({"method": method_name, "split": "cv_std", "fold": -1, "validation_study": args.cv_description})
         metric_rows.extend([cv_mean, cv_std])
         all_metric_rows.extend([cv_mean, cv_std])
         print("", flush=True)
@@ -262,7 +263,7 @@ def main() -> None:
             "class_names": CLASS_NAMES,
             "trainval_path": str(args.trainval_subset),
             "untouched_test_path": str(args.test_subset),
-            "cv": "leave-one-study-out CV on balanced trainval data",
+            "cv": args.cv_description,
             "untouched_test_used_for_training": False,
             "trained_at_utc": now_utc(),
             "output_dir": str(out_dir),
