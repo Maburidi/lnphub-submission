@@ -45,7 +45,7 @@ def smiles_to_graph(smiles: str, y: float | None = None) -> Data | None:
     data = Data(
         x=torch.tensor(atoms, dtype=torch.long),
         edge_index=torch.tensor([row, col], dtype=torch.long),
-        edge_attr=torch.tensor(edge_feat, dtype=torch.long),
+        edge_attr=torch.tensor(edge_feat, dtype=torch.long).view(-1, 3),
     )
     if y is not None:
         data.y = torch.tensor([float(y)], dtype=torch.float32)

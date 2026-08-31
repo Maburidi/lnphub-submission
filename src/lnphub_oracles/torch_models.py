@@ -44,6 +44,38 @@ class GCNRegressor(nn.Module):
         return self.head(global_mean_pool(h, data.batch)).view(-1)
 
 
+def _append_tabular(pooled, data):
+    tabular = getattr(data, "tabular", None)
+    if tabular is None:
+        return pooled
+    tabular = tabular.float()
+    if tabular.dim() == 1:
+        tabular = tabular.view(pooled.size(0), -1)
+    return torch.cat([pooled, tabular], dim=1)
+
+
+class GCNClassifier(nn.Module):
+    def __init__(self, emb_dim: int = 128, layers: int = 4, dropout: float = 0.20, num_classes: int = 3, tabular_dim: int = 0):
+        super().__init__()
+        self.atom = AtomEncoder(emb_dim)
+        self.convs = nn.ModuleList([GCNConv(emb_dim, emb_dim) for _ in range(layers)])
+        self.norms = nn.ModuleList([nn.BatchNorm1d(emb_dim) for _ in range(layers)])
+        self.dropout = nn.Dropout(dropout)
+        self.head = nn.Sequential(
+            nn.Linear(emb_dim + tabular_dim, emb_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(emb_dim, num_classes),
+        )
+
+    def forward(self, data):
+        h = self.atom(data.x)
+        for conv, norm in zip(self.convs, self.norms):
+            h = self.dropout(torch.relu(norm(conv(h, data.edge_index))))
+        pooled = _append_tabular(global_mean_pool(h, data.batch), data)
+        return self.head(pooled)
+
+
 class GINRegressor(nn.Module):
     def __init__(self, emb_dim: int = 128, layers: int = 4, dropout: float = 0.15):
         super().__init__()
@@ -61,6 +93,31 @@ class GINRegressor(nn.Module):
         for conv, norm in zip(self.convs, self.norms):
             h = self.dropout(torch.relu(norm(conv(h, data.edge_index))))
         return self.head(global_mean_pool(h, data.batch)).view(-1)
+
+
+class GINClassifier(nn.Module):
+    def __init__(self, emb_dim: int = 128, layers: int = 4, dropout: float = 0.20, num_classes: int = 3, tabular_dim: int = 0):
+        super().__init__()
+        self.atom = AtomEncoder(emb_dim)
+        self.convs = nn.ModuleList()
+        for _ in range(layers):
+            mlp = nn.Sequential(nn.Linear(emb_dim, emb_dim), nn.ReLU(), nn.Linear(emb_dim, emb_dim))
+            self.convs.append(GINConv(mlp))
+        self.norms = nn.ModuleList([nn.BatchNorm1d(emb_dim) for _ in range(layers)])
+        self.dropout = nn.Dropout(dropout)
+        self.head = nn.Sequential(
+            nn.Linear(emb_dim + tabular_dim, emb_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(emb_dim, num_classes),
+        )
+
+    def forward(self, data):
+        h = self.atom(data.x)
+        for conv, norm in zip(self.convs, self.norms):
+            h = self.dropout(torch.relu(norm(conv(h, data.edge_index))))
+        pooled = _append_tabular(global_mean_pool(h, data.batch), data)
+        return self.head(pooled)
 
 
 class DMPNNRegressor(nn.Module):
@@ -84,3 +141,32 @@ class DMPNNRegressor(nn.Module):
         for conv, norm in zip(self.convs, self.norms):
             h = self.dropout(torch.relu(norm(conv(h, data.edge_index, e))))
         return self.head(global_mean_pool(h, data.batch)).view(-1)
+
+
+class DMPNNClassifier(nn.Module):
+    """Edge-aware message passing classifier used as a D-MPNN-style oracle."""
+
+    def __init__(self, emb_dim: int = 128, layers: int = 4, dropout: float = 0.20, num_classes: int = 3, tabular_dim: int = 0):
+        super().__init__()
+        self.atom = AtomEncoder(emb_dim)
+        self.bond = BondEncoder(emb_dim)
+        self.convs = nn.ModuleList()
+        for _ in range(layers):
+            mlp = nn.Sequential(nn.Linear(emb_dim, emb_dim), nn.ReLU(), nn.Linear(emb_dim, emb_dim))
+            self.convs.append(GINEConv(mlp))
+        self.norms = nn.ModuleList([nn.BatchNorm1d(emb_dim) for _ in range(layers)])
+        self.dropout = nn.Dropout(dropout)
+        self.head = nn.Sequential(
+            nn.Linear(emb_dim + tabular_dim, emb_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(emb_dim, num_classes),
+        )
+
+    def forward(self, data):
+        h = self.atom(data.x)
+        e = self.bond(data.edge_attr)
+        for conv, norm in zip(self.convs, self.norms):
+            h = self.dropout(torch.relu(norm(conv(h, data.edge_index, e))))
+        pooled = _append_tabular(global_mean_pool(h, data.batch), data)
+        return self.head(pooled)
