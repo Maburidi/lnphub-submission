@@ -207,7 +207,8 @@ def train_loop(model, loaders, args, device):
             best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
         print(f"epoch {epoch:03d} val_mse={val_loss:.5g}")
     if best_state:
-        model.load_state_dict(best_state)
+        with torch.inference_mode():
+            model.load_state_dict(best_state)
 
 
 def evaluate_loss(model, loader, device):

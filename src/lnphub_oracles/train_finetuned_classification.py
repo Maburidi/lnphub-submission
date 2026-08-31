@@ -282,7 +282,8 @@ def train_loop(model, train_loader, val_loader, args, device: torch.device, meth
             print(f"{method_name} | {fold_label}: early stopping at epoch {epoch}", flush=True)
             break
     if best_state is not None:
-        model.load_state_dict(best_state)
+        with torch.inference_mode():
+            model.load_state_dict(best_state)
     return best_val
 
 
