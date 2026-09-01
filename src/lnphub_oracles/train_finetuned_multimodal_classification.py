@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import gc
 import importlib.util
 import shutil
 import subprocess
@@ -79,6 +80,17 @@ def set_seed(seed: int) -> None:
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+
+
+def cleanup_accelerator() -> None:
+    """Release model references and cached CUDA blocks between encoders."""
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        try:
+            torch.cuda.ipc_collect()
+        except RuntimeError:
+            pass
 
 
 def normalize_method_key(method: str) -> str:
@@ -799,8 +811,6 @@ def run_lion_train_predict(
 
 def train_lion_random(train, val, test, args):
     method_name = "LiON-Finetuned Random Split"
-    if not args.tabular_cols:
-        return write_unavailable(args.output_dir, method_name, "LiON is formulation-aware; run the all-layer fine-tuning cells so the LNPDB formulation/context feature schema is available.")
     out_dir = method_dir(args.output_dir, method_name)
     val_pred, test_pred, val_metrics, test_metrics = run_lion_train_predict(train, val, test, args, method_name, out_dir)
     assert val_metrics is not None and val_pred is not None and test_metrics is not None and test_pred is not None
@@ -815,14 +825,13 @@ def train_lion_random(train, val, test, args):
         "method_key": "lion",
         "model_type": "chemprop_lnpdb_lion_multiclass_finetune",
         "encoder_trainable": True,
+        "input_note": "LiON always uses its native LNPDB formulation/context feature schema in addition to SMILES.",
     })
     return metrics_row(method_name, "trained", out_dir, val_metrics, test_metrics, "validation")
 
 
 def train_lion_cv(trainval, test, args):
     method_name = "LiON-Finetuned"
-    if not args.tabular_cols:
-        return write_unavailable(args.output_dir, method_name, "LiON is formulation-aware; run the all-layer fine-tuning cells so the LNPDB formulation/context feature schema is available.")
     out_dir = method_dir(args.output_dir, method_name)
     metric_rows, cv_predictions = [], []
     folds = sorted(int(f) for f in trainval["cv_fold"].dropna().unique() if int(f) >= 0)
@@ -854,6 +863,7 @@ def train_lion_cv(trainval, test, args):
         "method_key": "lion",
         "model_type": "chemprop_lnpdb_lion_multiclass_finetune",
         "encoder_trainable": True,
+        "input_note": "LiON always uses its native LNPDB formulation/context feature schema in addition to SMILES.",
     })
     return metrics_row(method_name, "trained", out_dir, cv_mean, test_metrics, "cv")
 
@@ -861,16 +871,19 @@ def train_lion_cv(trainval, test, args):
 def unimol_fit_predict(train, val, test, args, method_name: str, run_dir: Path):
     from unimol_tools import MolPredict, MolTrain
 
+    cleanup_accelerator()
     run_dir.mkdir(parents=True, exist_ok=True)
     train_data = pd.DataFrame({"SMILES": smiles_series(train).astype(str).values, "TARGET": train[args.target_col].astype(int).values})
     val_data = pd.DataFrame({"SMILES": smiles_series(val).astype(str).values, "TARGET": val[args.target_col].astype(int).values}) if val is not None else None
     test_data = pd.DataFrame({"SMILES": smiles_series(test).astype(str).values, "TARGET": test[args.target_col].astype(int).values}) if test is not None else None
     model_dir = run_dir / "unimol_model"
+    unimol_batch_size = max(1, min(int(args.batch_size), 2))
+    print(f"{method_name}: Uni-Mol batch size={unimol_batch_size}", flush=True)
     trainer = MolTrain(
         task="multiclass",
         data_type="molecule",
         epochs=args.epochs,
-        batch_size=args.batch_size,
+        batch_size=unimol_batch_size,
         metrics="acc",
         remove_hs=False,
         model_name="unimolv1",
@@ -1176,6 +1189,8 @@ def main() -> None:
             except Exception as exc:
                 name = display_method_name(key, method)
                 manifest_rows.append(write_unavailable(args.output_dir, name, repr(exc)))
+            finally:
+                cleanup_accelerator()
     else:
         train = clean_frame(args.train_subset, args.target_col, "train")
         val = clean_frame(args.validation_subset, args.target_col, "validation")
@@ -1199,6 +1214,8 @@ def main() -> None:
             except Exception as exc:
                 name = display_method_name(key, method)
                 manifest_rows.append(write_unavailable(args.output_dir, name, repr(exc)))
+            finally:
+                cleanup_accelerator()
 
     manifest = pd.DataFrame(manifest_rows)
     manifest_path = args.output_dir / "finetuned_multimodal_classification_manifest.csv"
