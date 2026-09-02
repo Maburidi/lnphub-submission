@@ -917,12 +917,18 @@ def unimol_fit_predict(train, val, test, args, method_name: str, run_dir: Path):
     test_data = pd.DataFrame({"SMILES": smiles_series(test).astype(str).values, "TARGET": test[args.target_col].astype(int).values}) if test is not None else None
     model_dir = run_dir / "unimol_model"
     unimol_batch_size = max(1, min(int(args.batch_size), 2))
-    print(f"{method_name}: Uni-Mol batch size={unimol_batch_size}", flush=True)
+    print(
+        f"{method_name}: Uni-Mol batch size={unimol_batch_size}; internal kfold=1 "
+        "(outer validation is controlled by LNPHub)",
+        flush=True,
+    )
     trainer = MolTrain(
         task="multiclass",
         data_type="molecule",
         epochs=args.epochs,
         batch_size=unimol_batch_size,
+        early_stopping=args.patience,
+        kfold=1,
         metrics="acc",
         remove_hs=False,
         model_name="unimolv1",
@@ -930,11 +936,8 @@ def unimol_fit_predict(train, val, test, args, method_name: str, run_dir: Path):
         use_cuda=torch.cuda.is_available(),
         seed=args.seed,
     )
-    try:
-        trainer.fit(data=train_data, valid_data=val_data)
-    except TypeError:
-        combined = pd.concat([train_data.assign(_split="train"), val_data.assign(_split="valid")], ignore_index=True) if val_data is not None else train_data
-        trainer.fit(data=combined)
+    # Outer CV is controlled by this trainer; Uni-Mol must see outer-train rows only.
+    trainer.fit(data=train_data)
 
     predictor = MolPredict(load_model=str(model_dir))
 
