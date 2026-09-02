@@ -675,7 +675,7 @@ def build_lion_extra_features(
     return x, ckpt_dir, ref_extra
 
 
-def ensure_lion_chemprop(repo_dir: Path) -> tuple[Path, Path]:
+def ensure_lion_chemprop(repo_dir: Path) -> tuple[Path, Path, Path]:
     venv = repo_dir.parent / "lion_py38"
     train_exe = venv / "bin" / "chemprop_train"
     predict_exe = venv / "bin" / "chemprop_predict"
@@ -700,7 +700,7 @@ def ensure_lion_chemprop(repo_dir: Path) -> tuple[Path, Path]:
         ], check=True)
     if not train_exe.exists() or not predict_exe.exists():
         raise FileNotFoundError(f"Chemprop executables not found in {venv}")
-    return train_exe, predict_exe
+    return py38, train_exe, predict_exe
 
 
 def write_lion_split(
@@ -758,9 +758,18 @@ def run_lion_train_predict(
     method_name: str,
     run_dir: Path,
 ) -> tuple[pd.DataFrame | None, pd.DataFrame | None, dict | None, dict | None]:
-    train_exe, predict_exe = ensure_lion_chemprop(args.repo_dir)
+    py38, _, predict_exe = ensure_lion_chemprop(args.repo_dir)
     lion_input_cols = args.tabular_cols or None
     _, ckpt_dir, ref_extra = build_lion_extra_features(train.reset_index(drop=True), args.repo_dir, lion_input_cols)
+    checkpoint_paths = sorted(ckpt_dir.rglob("model.pt"))
+    if len(checkpoint_paths) != 1:
+        raise FileNotFoundError(
+            f"Expected exactly one LiON model.pt under {ckpt_dir}, found {len(checkpoint_paths)}."
+        )
+    pretrained_checkpoint = checkpoint_paths[0]
+    transfer_entrypoint = Path(__file__).with_name("lion_chemprop_transfer_train.py")
+    if not transfer_entrypoint.exists():
+        raise FileNotFoundError(f"Missing LiON transfer-training entry point: {transfer_entrypoint}")
     work_dir = run_dir / "_chemprop_input"
     train_path, train_feat = write_lion_split(train, args.target_col, args.repo_dir, work_dir, "train", lion_input_cols)
     val_path = val_feat = None
@@ -768,17 +777,21 @@ def run_lion_train_predict(
         val_path, val_feat = write_lion_split(val, args.target_col, args.repo_dir, work_dir, "validation", lion_input_cols)
 
     model_dir = run_dir / "chemprop_model"
+    if model_dir.exists():
+        shutil.rmtree(model_dir)
     cmd = [
-        str(train_exe),
+        str(py38), str(transfer_entrypoint),
         "--data_path", str(train_path),
         "--dataset_type", "multiclass",
         "--multiclass_num_classes", str(len(CLASS_LABELS)),
         "--features_path", str(train_feat),
-        "--checkpoint_dir", str(ckpt_dir),
+        "--checkpoint_path", str(pretrained_checkpoint),
         "--save_dir", str(model_dir),
         "--epochs", str(args.epochs),
         "--batch_size", str(args.batch_size),
         "--seed", str(args.seed),
+        "--num_folds", "1",
+        "--ensemble_size", "1",
     ]
     if val_path is not None:
         cmd += ["--separate_val_path", str(val_path), "--separate_val_features_path", str(val_feat)]
