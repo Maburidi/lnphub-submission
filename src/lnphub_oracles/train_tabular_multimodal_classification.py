@@ -40,6 +40,20 @@ DEFAULT_MULTIMODAL_COLS = [
     "particle_size_nm",
     "pdi",
 ]
+FORMULATION_ONLY_COLS = [
+    "il_mol_ratio",
+    "helper_lipid_mol_ratio",
+    "cholesterol_mol_ratio",
+    "peg_lipid_mol_ratio",
+]
+
+
+def feature_set_label(cols: list[str]) -> str:
+    if cols == FORMULATION_ONLY_COLS:
+        return "Formulation"
+    if cols == DEFAULT_MULTIMODAL_COLS:
+        return "Formulation/PhysChem"
+    return "Selected Covariates"
 
 
 def parse_args() -> argparse.Namespace:
@@ -130,6 +144,7 @@ def main() -> None:
             raise ValueError(f"Unknown method: {key}. Valid methods: {sorted(METHODS)}")
 
         method_name, molecular_type, estimator_kind = METHODS[key]
+        method_name = method_name.replace("Formulation/PhysChem", feature_set_label(args.multimodal_cols))
         print("", flush=True)
         print("=" * 80, flush=True)
         print(method_name, flush=True)
@@ -162,7 +177,7 @@ def main() -> None:
             f"test={X_eval.shape[0]:,} x {X_eval.shape[1]:,}",
             flush=True,
         )
-        print(f"Molecular features: {len(mol_cols):,}; formulation/physchem features: {len(multi_cols):,}", flush=True)
+        print(f"Molecular features: {len(mol_cols):,}; appended numeric features: {len(multi_cols):,}", flush=True)
 
         out_dir = ensure_dir(Path(args.output_dir) / safe_name(method_name))
         cv_predictions = []

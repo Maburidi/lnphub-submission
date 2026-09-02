@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import torch
 from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
@@ -24,6 +25,7 @@ from sklearn.metrics import (
     precision_recall_fscore_support,
     roc_auc_score,
 )
+from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, label_binarize
 from torch import nn
@@ -610,7 +612,11 @@ def norm_name(value) -> str:
     )
 
 
-def build_lion_extra_features(frame: pd.DataFrame, repo_dir: Path) -> tuple[pd.DataFrame, Path, Path]:
+def build_lion_extra_features(
+    frame: pd.DataFrame,
+    repo_dir: Path,
+    input_cols: list[str] | None = None,
+) -> tuple[pd.DataFrame, Path, Path]:
     lion_dir = repo_dir / "LNPDB" / "data" / "LNPDB_for_LiON"
     ckpt_dir = lion_dir / "single_split" / "trained_model_checkpoints"
     ref_extra = lion_dir / "all_data_extra_x.csv"
@@ -621,6 +627,8 @@ def build_lion_extra_features(frame: pd.DataFrame, repo_dir: Path) -> tuple[pd.D
 
     extra_cols = pd.read_csv(ref_extra, nrows=0).columns.tolist()
     x = pd.DataFrame(0.0, index=frame.index, columns=extra_cols)
+    requested = set(input_cols or [])
+    populate_native_schema = input_cols is None
     direct_map = {
         "IL_to_nucleicacid_massratio": "il_to_nucleic_acid_mass_ratio",
         "IL_molratio": "il_mol_ratio",
@@ -630,7 +638,7 @@ def build_lion_extra_features(frame: pd.DataFrame, repo_dir: Path) -> tuple[pd.D
         "Dose_ug_nucleicacid": "dose_ug_nucleicacid",
     }
     for out_col, in_col in direct_map.items():
-        if out_col in x.columns and in_col in frame.columns:
+        if out_col in x.columns and in_col in frame.columns and (populate_native_schema or in_col in requested):
             x[out_col] = pd.to_numeric(frame[in_col], errors="coerce").fillna(0.0).to_numpy(dtype=float)
 
     for prefix, source_col in [
@@ -643,13 +651,15 @@ def build_lion_extra_features(frame: pd.DataFrame, repo_dir: Path) -> tuple[pd.D
         ("Cargo_", "cargo_type"),
         ("Cargo_type_", "cargo_type"),
     ]:
-        if source_col not in frame.columns:
+        context_requested = any(c.startswith(f"context_{source_col}_") for c in requested)
+        if source_col not in frame.columns or not (populate_native_schema or source_col in requested or context_requested):
             continue
         source_norm = frame[source_col].map(norm_name)
         for col in [c for c in x.columns if c.startswith(prefix)]:
             x[col] = (source_norm == norm_name(col[len(prefix):])).astype(float).to_numpy()
 
-    if "experimental_setting" in frame.columns:
+    setting_requested = any(c.startswith("context_experimental_setting_") for c in requested)
+    if "experimental_setting" in frame.columns and (populate_native_schema or "experimental_setting" in requested or setting_requested):
         setting = frame["experimental_setting"].astype(str).str.lower().str.strip()
         route_setting = {
             "Route_of_administration_in_vitro": "in_vitro",
@@ -693,11 +703,18 @@ def ensure_lion_chemprop(repo_dir: Path) -> tuple[Path, Path]:
     return train_exe, predict_exe
 
 
-def write_lion_split(frame: pd.DataFrame, target_col: str, repo_dir: Path, out_dir: Path, split: str) -> tuple[Path, Path]:
+def write_lion_split(
+    frame: pd.DataFrame,
+    target_col: str,
+    repo_dir: Path,
+    out_dir: Path,
+    split: str,
+    input_cols: list[str] | None,
+) -> tuple[Path, Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     y = frame[target_col].astype(int).to_numpy()
     data = pd.DataFrame({"smiles": smiles_series(frame).astype(str).to_numpy(), "target": y})
-    features, _, _ = build_lion_extra_features(frame.reset_index(drop=True), repo_dir)
+    features, _, _ = build_lion_extra_features(frame.reset_index(drop=True), repo_dir, input_cols)
     data_path = out_dir / f"{split}.csv"
     feat_path = out_dir / f"{split}_features.csv"
     data.to_csv(data_path, index=False)
@@ -742,12 +759,13 @@ def run_lion_train_predict(
     run_dir: Path,
 ) -> tuple[pd.DataFrame | None, pd.DataFrame | None, dict | None, dict | None]:
     train_exe, predict_exe = ensure_lion_chemprop(args.repo_dir)
-    _, ckpt_dir, ref_extra = build_lion_extra_features(train.reset_index(drop=True), args.repo_dir)
+    lion_input_cols = args.tabular_cols or None
+    _, ckpt_dir, ref_extra = build_lion_extra_features(train.reset_index(drop=True), args.repo_dir, lion_input_cols)
     work_dir = run_dir / "_chemprop_input"
-    train_path, train_feat = write_lion_split(train, args.target_col, args.repo_dir, work_dir, "train")
+    train_path, train_feat = write_lion_split(train, args.target_col, args.repo_dir, work_dir, "train", lion_input_cols)
     val_path = val_feat = None
     if val is not None:
-        val_path, val_feat = write_lion_split(val, args.target_col, args.repo_dir, work_dir, "validation")
+        val_path, val_feat = write_lion_split(val, args.target_col, args.repo_dir, work_dir, "validation", lion_input_cols)
 
     model_dir = run_dir / "chemprop_model"
     cmd = [
@@ -786,7 +804,7 @@ def run_lion_train_predict(
     test_pred_table = None
     test_metrics = None
     if test is not None:
-        test_path, test_feat = write_lion_split(test, args.target_col, args.repo_dir, work_dir, "test")
+        test_path, test_feat = write_lion_split(test, args.target_col, args.repo_dir, work_dir, "test", lion_input_cols)
         test_pred_path = work_dir / "test_predictions_raw.csv"
         run_command([
             str(predict_exe),
@@ -804,6 +822,7 @@ def run_lion_train_predict(
         "molecular_input": "LiON/LNPDB Chemprop fine-tuning",
         "lion_reference_feature_schema": str(ref_extra),
         "n_lion_extra_features": int(pd.read_csv(ref_extra, nrows=0).shape[1]),
+        "populated_lion_input_columns": args.tabular_cols or "native LiON schema",
         "class_names": CLASS_NAMES,
     })
     return val_pred_table, test_pred_table, val_metrics, test_metrics
@@ -825,7 +844,7 @@ def train_lion_random(train, val, test, args):
         "method_key": "lion",
         "model_type": "chemprop_lnpdb_lion_multiclass_finetune",
         "encoder_trainable": True,
-        "input_note": "LiON always uses its native LNPDB formulation/context feature schema in addition to SMILES.",
+        "input_note": "LiON retains its fixed LNPDB feature shape; only requested input columns are populated when --tabular-cols is supplied.",
     })
     return metrics_row(method_name, "trained", out_dir, val_metrics, test_metrics, "validation")
 
@@ -863,7 +882,7 @@ def train_lion_cv(trainval, test, args):
         "method_key": "lion",
         "model_type": "chemprop_lnpdb_lion_multiclass_finetune",
         "encoder_trainable": True,
-        "input_note": "LiON always uses its native LNPDB formulation/context feature schema in addition to SMILES.",
+        "input_note": "LiON retains its fixed LNPDB feature shape; only requested input columns are populated when --tabular-cols is supplied.",
     })
     return metrics_row(method_name, "trained", out_dir, cv_mean, test_metrics, "cv")
 
@@ -873,7 +892,27 @@ def unimol_fit_predict(train, val, test, args, method_name: str, run_dir: Path):
 
     cleanup_accelerator()
     run_dir.mkdir(parents=True, exist_ok=True)
-    train_data = pd.DataFrame({"SMILES": smiles_series(train).astype(str).values, "TARGET": train[args.target_col].astype(int).values})
+    molecular_train = train
+    fusion_train = None
+    if args.tabular_cols:
+        molecular_idx, fusion_idx = train_test_split(
+            np.arange(len(train)),
+            test_size=0.20,
+            random_state=args.seed,
+            shuffle=True,
+            stratify=train[args.target_col].to_numpy(dtype=int),
+        )
+        molecular_train = train.iloc[molecular_idx].reset_index(drop=True)
+        fusion_train = train.iloc[fusion_idx].reset_index(drop=True)
+        print(
+            f"{method_name}: leakage-safe late-fusion split: molecular fine-tuning={len(molecular_train):,}, "
+            f"fusion fitting={len(fusion_train):,}",
+            flush=True,
+        )
+    train_data = pd.DataFrame({
+        "SMILES": smiles_series(molecular_train).astype(str).values,
+        "TARGET": molecular_train[args.target_col].astype(int).values,
+    })
     val_data = pd.DataFrame({"SMILES": smiles_series(val).astype(str).values, "TARGET": val[args.target_col].astype(int).values}) if val is not None else None
     test_data = pd.DataFrame({"SMILES": smiles_series(test).astype(str).values, "TARGET": test[args.target_col].astype(int).values}) if test is not None else None
     model_dir = run_dir / "unimol_model"
@@ -918,10 +957,59 @@ def unimol_fit_predict(train, val, test, args, method_name: str, run_dir: Path):
         row_sums = arr.sum(axis=1, keepdims=True)
         return np.divide(arr, row_sums, out=np.full_like(arr, 1.0 / arr.shape[1]), where=row_sums > 0)
 
+    fusion_model = None
+    fusion_preprocessor = None
+    if args.tabular_cols:
+        print(
+            f"{method_name}: fitting late-fusion classifier with {len(args.tabular_cols)} tabular formulation/context features",
+            flush=True,
+        )
+        assert fusion_train is not None
+        fusion_data = pd.DataFrame({
+            "SMILES": smiles_series(fusion_train).astype(str).values,
+            "TARGET": fusion_train[args.target_col].astype(int).values,
+        })
+        fusion_preprocessor = fit_tabular_preprocessor(fusion_train, args.tabular_cols)
+        train_molecular_proba = to_proba(predictor.predict(data=fusion_data))
+        train_tabular = transform_tabular(fusion_train, args.tabular_cols, fusion_preprocessor)
+        fusion_model = LogisticRegression(
+            max_iter=2000,
+            class_weight="balanced",
+            random_state=args.seed,
+        )
+        fusion_model.fit(
+            np.hstack([train_molecular_proba, train_tabular]),
+            fusion_train[args.target_col].to_numpy(dtype=int),
+        )
+        joblib.dump({
+            "classifier": fusion_model,
+            "tabular_preprocessor": fusion_preprocessor,
+            "tabular_cols": list(args.tabular_cols),
+            "molecular_score_columns": ["unimol_p_low", "unimol_p_medium", "unimol_p_high"],
+        }, run_dir / "unimol_tabular_late_fusion.joblib")
+        write_json(run_dir / "fusion_schema.json", {
+            "strategy": "leakage-safe late fusion of fine-tuned Uni-Mol class probabilities and standardized tabular features",
+            "molecular_training_fraction": 0.80,
+            "fusion_training_fraction": 0.20,
+            "tabular_cols": list(args.tabular_cols),
+            "class_names": CLASS_NAMES,
+        })
+
+    def predict_with_optional_fusion(data: pd.DataFrame, frame: pd.DataFrame) -> np.ndarray:
+        molecular_proba = to_proba(predictor.predict(data=data))
+        if fusion_model is None:
+            return molecular_proba
+        tabular = transform_tabular(frame, args.tabular_cols, fusion_preprocessor)
+        raw = fusion_model.predict_proba(np.hstack([molecular_proba, tabular]))
+        proba = np.zeros((len(frame), len(CLASS_LABELS)), dtype=np.float32)
+        for source_idx, class_id in enumerate(fusion_model.classes_):
+            proba[:, int(class_id)] = raw[:, source_idx]
+        return proba
+
     val_pred_table = None
     val_metrics = None
     if val_data is not None:
-        val_proba = to_proba(predictor.predict(data=val_data))
+        val_proba = predict_with_optional_fusion(val_data, val)
         yv = val[args.target_col].to_numpy(dtype=int)
         pv = val_proba.argmax(axis=1)
         val_metrics = classification_metrics(yv, pv, val_proba)
@@ -929,7 +1017,7 @@ def unimol_fit_predict(train, val, test, args, method_name: str, run_dir: Path):
     test_pred_table = None
     test_metrics = None
     if test_data is not None:
-        test_proba = to_proba(predictor.predict(data=test_data))
+        test_proba = predict_with_optional_fusion(test_data, test)
         yt = test[args.target_col].to_numpy(dtype=int)
         pt = test_proba.argmax(axis=1)
         test_metrics = classification_metrics(yt, pt, test_proba)
@@ -939,8 +1027,6 @@ def unimol_fit_predict(train, val, test, args, method_name: str, run_dir: Path):
 
 def train_unimol_random(train, val, test, args):
     method_name = "Uni-Mol-Finetuned Random Split"
-    if args.tabular_cols:
-        return write_unavailable(args.output_dir, method_name, "Official unimol_tools MolTrain fine-tunes from molecular SMILES only here; use frozen Uni-Mol plus all-layer fusion for multimodal inputs.")
     out_dir = method_dir(args.output_dir, method_name)
     val_pred, test_pred, val_metrics, test_metrics = unimol_fit_predict(train, val, test, args, method_name, out_dir)
     assert val_metrics is not None and val_pred is not None and test_metrics is not None and test_pred is not None
@@ -953,16 +1039,15 @@ def train_unimol_random(train, val, test, args):
         "test_predictions": test_pred,
     }, test[args.target_col].to_numpy(dtype=int), test_pred["y_pred"].to_numpy(dtype=int), args, {
         "method_key": "uni_mol",
-        "model_type": "official_unimol_tools_moltrain_multiclass",
+        "model_type": "official_unimol_tools_moltrain_multiclass_with_optional_tabular_late_fusion",
         "encoder_trainable": True,
+        "fusion_strategy": "fine-tuned Uni-Mol probabilities plus standardized tabular features" if args.tabular_cols else "none",
     })
     return metrics_row(method_name, "trained", out_dir, val_metrics, test_metrics, "validation")
 
 
 def train_unimol_cv(trainval, test, args):
     method_name = "Uni-Mol-Finetuned"
-    if args.tabular_cols:
-        return write_unavailable(args.output_dir, method_name, "Official unimol_tools MolTrain fine-tunes from molecular SMILES only here; use frozen Uni-Mol plus all-layer fusion for multimodal inputs.")
     out_dir = method_dir(args.output_dir, method_name)
     metric_rows, cv_predictions = [], []
     folds = sorted(int(f) for f in trainval["cv_fold"].dropna().unique() if int(f) >= 0)
@@ -992,8 +1077,9 @@ def train_unimol_cv(trainval, test, args):
         "test_predictions": test_pred,
     }, test[args.target_col].to_numpy(dtype=int), test_pred["y_pred"].to_numpy(dtype=int), args, {
         "method_key": "uni_mol",
-        "model_type": "official_unimol_tools_moltrain_multiclass",
+        "model_type": "official_unimol_tools_moltrain_multiclass_with_optional_tabular_late_fusion",
         "encoder_trainable": True,
+        "fusion_strategy": "fine-tuned Uni-Mol probabilities plus standardized tabular features" if args.tabular_cols else "none",
     })
     return metrics_row(method_name, "trained", out_dir, cv_mean, test_metrics, "cv")
 
