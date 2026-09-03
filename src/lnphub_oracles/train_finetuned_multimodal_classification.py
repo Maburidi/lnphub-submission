@@ -47,6 +47,14 @@ GNN_METHODS = {
 DEFAULT_METHODS = ["agile", "lion", "chemberta_mtr", "molformer", "molclr_gin", "uni_mol"]
 CLASS_LABELS = [0, 1, 2]
 CLASS_NAMES = {0: "low", 1: "medium", 2: "high"}
+LION_NATIVE_CONTINUOUS_MAP = {
+    "IL_to_nucleicacid_massratio": "il_to_nucleic_acid_mass_ratio",
+    "IL_molratio": "il_mol_ratio",
+    "HL_molratio": "helper_lipid_mol_ratio",
+    "CHL_molratio": "cholesterol_mol_ratio",
+    "PEG_molratio": "peg_lipid_mol_ratio",
+    "Dose_ug_nucleicacid": "dose_ug_nucleicacid",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -60,6 +68,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--target-col", default="delivery_class_3")
     parser.add_argument("--methods", nargs="+", default=DEFAULT_METHODS)
     parser.add_argument("--tabular-cols", nargs="*", default=[])
+    parser.add_argument(
+        "--lion-append-tabular-features",
+        action="store_true",
+        help=(
+            "Place supported formulation ratios in LiON's native 92-column schema and append "
+            "the remaining requested physicochemical/context columns."
+        ),
+    )
     parser.add_argument("--cv-description", default="random stratified 5-fold CV with random held-out test set")
     parser.add_argument("--epochs", type=int, default=8)
     parser.add_argument("--patience", type=int, default=3)
@@ -629,15 +645,7 @@ def build_lion_extra_features(
     x = pd.DataFrame(0.0, index=frame.index, columns=extra_cols)
     requested = set(input_cols or [])
     populate_native_schema = input_cols is None
-    direct_map = {
-        "IL_to_nucleicacid_massratio": "il_to_nucleic_acid_mass_ratio",
-        "IL_molratio": "il_mol_ratio",
-        "HL_molratio": "helper_lipid_mol_ratio",
-        "CHL_molratio": "cholesterol_mol_ratio",
-        "PEG_molratio": "peg_lipid_mol_ratio",
-        "Dose_ug_nucleicacid": "dose_ug_nucleicacid",
-    }
-    for out_col, in_col in direct_map.items():
+    for out_col, in_col in LION_NATIVE_CONTINUOUS_MAP.items():
         if out_col in x.columns and in_col in frame.columns and (populate_native_schema or in_col in requested):
             x[out_col] = pd.to_numeric(frame[in_col], errors="coerce").fillna(0.0).to_numpy(dtype=float)
 
@@ -710,11 +718,29 @@ def write_lion_split(
     out_dir: Path,
     split: str,
     input_cols: list[str] | None,
+    append_tabular_features: bool = False,
 ) -> tuple[Path, Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     y = frame[target_col].astype(int).to_numpy()
     data = pd.DataFrame({"smiles": smiles_series(frame).astype(str).to_numpy(), "target": y})
-    features, _, _ = build_lion_extra_features(frame.reset_index(drop=True), repo_dir, input_cols)
+    clean_frame = frame.reset_index(drop=True)
+    native_input_cols = input_cols
+    appended_cols: list[str] = []
+    if append_tabular_features and input_cols:
+        native_sources = set(LION_NATIVE_CONTINUOUS_MAP.values())
+        native_input_cols = [col for col in input_cols if col in native_sources]
+        appended_cols = [col for col in input_cols if col not in native_sources]
+
+    features, _, _ = build_lion_extra_features(clean_frame, repo_dir, native_input_cols)
+    if appended_cols:
+        appended = (
+            clean_frame[appended_cols]
+            .apply(pd.to_numeric, errors="coerce")
+            .replace([np.inf, -np.inf], np.nan)
+            .fillna(0.0)
+        )
+        appended.columns = [f"LNPHub__{col}" for col in appended_cols]
+        features = pd.concat([features.reset_index(drop=True), appended.reset_index(drop=True)], axis=1)
     data_path = out_dir / f"{split}.csv"
     feat_path = out_dir / f"{split}_features.csv"
     data.to_csv(data_path, index=False)
@@ -771,10 +797,16 @@ def run_lion_train_predict(
     if not transfer_entrypoint.exists():
         raise FileNotFoundError(f"Missing LiON transfer-training entry point: {transfer_entrypoint}")
     work_dir = run_dir / "_chemprop_input"
-    train_path, train_feat = write_lion_split(train, args.target_col, args.repo_dir, work_dir, "train", lion_input_cols)
+    train_path, train_feat = write_lion_split(
+        train, args.target_col, args.repo_dir, work_dir, "train", lion_input_cols,
+        append_tabular_features=args.lion_append_tabular_features,
+    )
     val_path = val_feat = None
     if val is not None:
-        val_path, val_feat = write_lion_split(val, args.target_col, args.repo_dir, work_dir, "validation", lion_input_cols)
+        val_path, val_feat = write_lion_split(
+            val, args.target_col, args.repo_dir, work_dir, "validation", lion_input_cols,
+            append_tabular_features=args.lion_append_tabular_features,
+        )
 
     model_dir = run_dir / "chemprop_model"
     if model_dir.exists():
@@ -817,7 +849,10 @@ def run_lion_train_predict(
     test_pred_table = None
     test_metrics = None
     if test is not None:
-        test_path, test_feat = write_lion_split(test, args.target_col, args.repo_dir, work_dir, "test", lion_input_cols)
+        test_path, test_feat = write_lion_split(
+            test, args.target_col, args.repo_dir, work_dir, "test", lion_input_cols,
+            append_tabular_features=args.lion_append_tabular_features,
+        )
         test_pred_path = work_dir / "test_predictions_raw.csv"
         run_command([
             str(predict_exe),
@@ -834,8 +869,14 @@ def run_lion_train_predict(
     write_json(run_dir / "feature_schema.json", {
         "molecular_input": "LiON/LNPDB Chemprop fine-tuning",
         "lion_reference_feature_schema": str(ref_extra),
-        "n_lion_extra_features": int(pd.read_csv(ref_extra, nrows=0).shape[1]),
+        "n_lion_native_features": int(pd.read_csv(ref_extra, nrows=0).shape[1]),
+        "n_lion_training_features": int(pd.read_csv(train_feat, nrows=0).shape[1]),
+        "n_lion_extra_features": int(pd.read_csv(train_feat, nrows=0).shape[1]),
         "populated_lion_input_columns": args.tabular_cols or "native LiON schema",
+        "appended_non_native_columns": (
+            [col for col in args.tabular_cols if col not in set(LION_NATIVE_CONTINUOUS_MAP.values())]
+            if args.lion_append_tabular_features else []
+        ),
         "class_names": CLASS_NAMES,
     })
     return val_pred_table, test_pred_table, val_metrics, test_metrics
@@ -857,7 +898,11 @@ def train_lion_random(train, val, test, args):
         "method_key": "lion",
         "model_type": "chemprop_lnpdb_lion_multiclass_finetune",
         "encoder_trainable": True,
-        "input_note": "LiON retains its fixed LNPDB feature shape; only requested input columns are populated when --tabular-cols is supplied.",
+        "input_note": (
+            "LiON native formulation slots plus appended LNPHub physicochemical/context inputs."
+            if args.lion_append_tabular_features else
+            "LiON fixed LNPDB feature shape with only requested compatible columns populated."
+        ),
     })
     return metrics_row(method_name, "trained", out_dir, val_metrics, test_metrics, "validation")
 
@@ -895,7 +940,11 @@ def train_lion_cv(trainval, test, args):
         "method_key": "lion",
         "model_type": "chemprop_lnpdb_lion_multiclass_finetune",
         "encoder_trainable": True,
-        "input_note": "LiON retains its fixed LNPDB feature shape; only requested input columns are populated when --tabular-cols is supplied.",
+        "input_note": (
+            "LiON native formulation slots plus appended LNPHub physicochemical/context inputs."
+            if args.lion_append_tabular_features else
+            "LiON fixed LNPDB feature shape with only requested compatible columns populated."
+        ),
     })
     return metrics_row(method_name, "trained", out_dir, cv_mean, test_metrics, "cv")
 
