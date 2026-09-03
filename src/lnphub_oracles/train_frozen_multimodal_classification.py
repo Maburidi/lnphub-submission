@@ -38,6 +38,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--encoders", nargs="+", default=DEFAULT_ENCODERS)
     parser.add_argument("--tabular-cols", nargs="*", default=[])
     parser.add_argument("--estimator", default="mlp", choices=["mlp", "xgboost", "random_forest"])
+    parser.add_argument(
+        "--require-complete-coverage",
+        action="store_true",
+        help="Fail instead of dropping subset records that do not have a matching frozen vector.",
+    )
     parser.add_argument("--cv-description", default="random stratified 5-fold CV on balanced trainval data")
     parser.add_argument("--seed", type=int, default=7)
     args = parser.parse_args()
@@ -94,6 +99,7 @@ def align_features(
     id_col: str,
     target_col: str,
     tabular_cols: list[str],
+    require_complete_coverage: bool = False,
 ) -> tuple[pd.DataFrame, np.ndarray, np.ndarray, list[str], list[str]]:
     if id_col not in subset.columns:
         raise ValueError(f"Subset is missing id column: {id_col}")
@@ -111,6 +117,12 @@ def align_features(
     merged = labels.merge(encoded[[id_col] + vec_cols], on=id_col, how="left", validate="many_to_one")
     missing = int(merged[vec_cols].isna().all(axis=1).sum())
     if missing:
+        if require_complete_coverage:
+            examples = merged.loc[merged[vec_cols].isna().all(axis=1), id_col].head(10).tolist()
+            raise ValueError(
+                f"Frozen-vector coverage is incomplete: {missing:,}/{len(subset):,} records are missing "
+                f"for this subset. Example {id_col} values: {examples}"
+            )
         print(f"Warning: dropping {missing:,} rows with no matching frozen vector.", flush=True)
     merged = merged.dropna(subset=vec_cols, how="all").sort_values("_order").drop(columns="_order").reset_index(drop=True)
 
@@ -239,13 +251,16 @@ def run_random(args) -> pd.DataFrame:
             continue
 
         train, X_train, y_train, vector_cols, feature_cols = align_features(
-            encoded, train_subset, id_col=args.id_col, target_col=args.target_col, tabular_cols=args.tabular_cols
+            encoded, train_subset, id_col=args.id_col, target_col=args.target_col,
+            tabular_cols=args.tabular_cols, require_complete_coverage=args.require_complete_coverage,
         )
         validation, X_val, y_val, _, val_feature_cols = align_features(
-            encoded, validation_subset, id_col=args.id_col, target_col=args.target_col, tabular_cols=args.tabular_cols
+            encoded, validation_subset, id_col=args.id_col, target_col=args.target_col,
+            tabular_cols=args.tabular_cols, require_complete_coverage=args.require_complete_coverage,
         )
         test, X_test, y_test, _, test_feature_cols = align_features(
-            encoded, test_subset, id_col=args.id_col, target_col=args.target_col, tabular_cols=args.tabular_cols
+            encoded, test_subset, id_col=args.id_col, target_col=args.target_col,
+            tabular_cols=args.tabular_cols, require_complete_coverage=args.require_complete_coverage,
         )
         if feature_cols != val_feature_cols or feature_cols != test_feature_cols:
             raise ValueError(f"Feature mismatch for {random_method_name}")
@@ -330,10 +345,12 @@ def run_cv(args) -> pd.DataFrame:
             continue
 
         trainval, X, y, vector_cols, feature_cols = align_features(
-            encoded, trainval_subset, id_col=args.id_col, target_col=args.target_col, tabular_cols=args.tabular_cols
+            encoded, trainval_subset, id_col=args.id_col, target_col=args.target_col,
+            tabular_cols=args.tabular_cols, require_complete_coverage=args.require_complete_coverage,
         )
         test, X_test, y_test, _, test_feature_cols = align_features(
-            encoded, test_subset, id_col=args.id_col, target_col=args.target_col, tabular_cols=args.tabular_cols
+            encoded, test_subset, id_col=args.id_col, target_col=args.target_col,
+            tabular_cols=args.tabular_cols, require_complete_coverage=args.require_complete_coverage,
         )
         if feature_cols != test_feature_cols:
             raise ValueError(f"Feature mismatch for {method_name}")
@@ -437,6 +454,7 @@ def main() -> None:
     print("Encoders:", ", ".join(args.encoders), flush=True)
     print("Encoded dirs:", ", ".join(str(p) for p in args.encoded_dirs), flush=True)
     print("Estimator/head:", args.estimator, flush=True)
+    print("Require complete vector coverage:", args.require_complete_coverage, flush=True)
     print("Extra-layer columns:", len(args.tabular_cols), flush=True)
     if args.tabular_cols:
         print(", ".join(args.tabular_cols), flush=True)

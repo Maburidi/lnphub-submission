@@ -7,3 +7,4 @@ __pycache__/
 # Generated training outputs
 results/
 trained_oracles/
+encoded_exact_frozen_cohort/
