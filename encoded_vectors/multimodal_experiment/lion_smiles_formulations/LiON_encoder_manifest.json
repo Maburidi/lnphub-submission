@@ -1,0 +1,24 @@
+{
+  "encoder": "LiON",
+  "method_key": "lion",
+  "output_file": "/content/lnphub-submission/encoded_exact_frozen_cohort/lion_smiles_formulations/LiON_encoder_vectors.parquet",
+  "n_records": 1008,
+  "n_unique_smiles": 753,
+  "embedding_dim": 300,
+  "finite_fraction": 1.0,
+  "zero_fraction": 0.16648148148148148,
+  "lion_mode": "smiles_formulations",
+  "lion_auxiliary_schema_size": 92,
+  "lion_populated_auxiliary_columns": [
+    "IL_molratio",
+    "HL_molratio",
+    "CHL_molratio",
+    "PEG_molratio"
+  ],
+  "lion_lnp_source_columns": {
+    "IL_molratio": "il_mol_ratio",
+    "HL_molratio": "helper_lipid_mol_ratio",
+    "CHL_molratio": "cholesterol_mol_ratio",
+    "PEG_molratio": "peg_lipid_mol_ratio"
+  }
+}
