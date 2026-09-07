@@ -1,0 +1,10 @@
+{
+  "encoder": "MoLFormer",
+  "method_key": "molformer",
+  "output_file": "/content/lnphub-submission/encoded_exact_frozen_cohort/smiles_only/MoLFormer_encoder_vectors.parquet",
+  "n_records": 1008,
+  "n_unique_smiles": 753,
+  "embedding_dim": 768,
+  "finite_fraction": 1.0,
+  "zero_fraction": 0.0
+}

@@ -1,0 +1,13 @@
+{
+  "encoder": "LiON",
+  "method_key": "lion",
+  "output_file": "/content/lnphub-submission/encoded_exact_frozen_cohort/smiles_only/LiON_encoder_vectors.parquet",
+  "n_records": 1008,
+  "n_unique_smiles": 753,
+  "embedding_dim": 300,
+  "finite_fraction": 1.0,
+  "zero_fraction": 0.16648148148148148,
+  "lion_mode": "smiles_only",
+  "lion_auxiliary_schema_size": 92,
+  "lion_populated_auxiliary_columns": []
+}

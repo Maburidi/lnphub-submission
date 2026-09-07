@@ -1,0 +1,8 @@
+file,rows,unique_record_ids,vector_dim,missing_expected_ids,extra_ids,all_finite,all_zero
+/content/lnphub-submission/encoded_exact_frozen_cohort/smiles_only/AGILE_encoder_vectors.parquet,1008,1008,512,0,0,True,False
+/content/lnphub-submission/encoded_exact_frozen_cohort/smiles_only/ChemBERTa_MTR_encoder_vectors.parquet,1008,1008,384,0,0,True,False
+/content/lnphub-submission/encoded_exact_frozen_cohort/smiles_only/MoLFormer_encoder_vectors.parquet,1008,1008,768,0,0,True,False
+/content/lnphub-submission/encoded_exact_frozen_cohort/smiles_only/MolCLR_GIN_encoder_vectors.parquet,1008,1008,512,0,0,True,False
+/content/lnphub-submission/encoded_exact_frozen_cohort/smiles_only/Uni_Mol_encoder_vectors.parquet,1008,1008,512,0,0,True,False
+/content/lnphub-submission/encoded_exact_frozen_cohort/smiles_only/LiON_encoder_vectors.parquet,1008,1008,300,0,0,True,False
+/content/lnphub-submission/encoded_exact_frozen_cohort/lion_smiles_formulations/LiON_encoder_vectors.parquet,1008,1008,300,0,0,True,False

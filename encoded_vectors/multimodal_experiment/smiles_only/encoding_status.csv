@@ -1,0 +1,7 @@
+encoder,status,file
+AGILE,encoded,/content/lnphub-submission/encoded_exact_frozen_cohort/smiles_only/AGILE_encoder_vectors.parquet
+ChemBERTa_MTR,encoded,/content/lnphub-submission/encoded_exact_frozen_cohort/smiles_only/ChemBERTa_MTR_encoder_vectors.parquet
+MoLFormer,encoded,/content/lnphub-submission/encoded_exact_frozen_cohort/smiles_only/MoLFormer_encoder_vectors.parquet
+MolCLR_GIN,encoded,/content/lnphub-submission/encoded_exact_frozen_cohort/smiles_only/MolCLR_GIN_encoder_vectors.parquet
+Uni_Mol,encoded,/content/lnphub-submission/encoded_exact_frozen_cohort/smiles_only/Uni_Mol_encoder_vectors.parquet
+LiON,encoded,/content/lnphub-submission/encoded_exact_frozen_cohort/smiles_only/LiON_encoder_vectors.parquet
