@@ -21,9 +21,11 @@ from .io_utils import ensure_dir, now_utc, read_table, write_json
 from .train_frozen_classification import (
     CLASS_LABELS,
     CLASS_NAMES,
+    class_names_for,
     classification_metrics,
     format_metrics,
     id_columns,
+    infer_class_labels,
     safe_name,
 )
 from .torch_models import DMPNNClassifier, GCNClassifier, GINClassifier
@@ -209,26 +211,28 @@ def save_eval_tables(out_dir: Path, frame: pd.DataFrame, y_true, y_pred, proba, 
     proba = np.asarray(proba, dtype=float)
     row_sums = proba.sum(axis=1, keepdims=True)
     proba = np.divide(proba, row_sums, out=np.full_like(proba, 1.0 / proba.shape[1]), where=row_sums > 0)
-    metrics = classification_metrics(y_true, y_pred, proba)
+    class_labels = infer_class_labels(y_true, y_pred, proba)
+    class_names = class_names_for(class_labels)
+    metrics = classification_metrics(y_true, y_pred, proba, class_labels=class_labels)
     metrics.update({"split": split_name})
 
     pred_df = frame.iloc[row_idx][id_columns(frame)].reset_index(drop=True).copy()
     pred_df["split"] = split_name
     pred_df["y_true"] = y_true
     pred_df["y_pred"] = y_pred
-    for cls in CLASS_LABELS:
-        pred_df[f"prob_{CLASS_NAMES[cls]}"] = proba[:, cls]
+    for i, cls in enumerate(class_labels):
+        pred_df[f"prob_{class_names[cls]}"] = proba[:, i]
     pred_df.to_csv(out_dir / f"{split_name}_predictions.csv", index=False)
 
-    cm = confusion_matrix(y_true, y_pred, labels=CLASS_LABELS)
+    cm = confusion_matrix(y_true, y_pred, labels=class_labels)
     pd.DataFrame(
         cm,
-        index=[f"true_{CLASS_NAMES[c]}" for c in CLASS_LABELS],
-        columns=[f"pred_{CLASS_NAMES[c]}" for c in CLASS_LABELS],
+        index=[f"true_{class_names[c]}" for c in class_labels],
+        columns=[f"pred_{class_names[c]}" for c in class_labels],
     ).to_csv(out_dir / f"{split_name}_confusion_matrix.csv")
-    per_class = precision_recall_fscore_support(y_true, y_pred, labels=CLASS_LABELS, zero_division=0)
+    per_class = precision_recall_fscore_support(y_true, y_pred, labels=class_labels, zero_division=0)
     pd.DataFrame({
-        "class": [CLASS_NAMES[c] for c in CLASS_LABELS],
+        "class": [class_names[c] for c in class_labels],
         "precision": per_class[0],
         "recall": per_class[1],
         "f1": per_class[2],
@@ -261,6 +265,10 @@ def run_random_split(args, device, tabular_dim: int):
     train = usable_frame(args.train_subset, args.target_col, "train")
     validation = usable_frame(args.validation_subset, args.target_col, "validation")
     test = usable_frame(args.test_subset, args.target_col, "test")
+    class_labels = infer_class_labels(train[args.target_col], validation[args.target_col], test[args.target_col])
+    class_names = class_names_for(class_labels)
+    num_classes = len(class_labels)
+    print("Class labels:", class_labels, flush=True)
 
     preprocessor = fit_tabular_preprocessor(train, args.tabular_cols)
     train_graphs, train = graph_dataset(train, args.target_col, transform_tabular(train, args.tabular_cols, preprocessor))
@@ -280,7 +288,7 @@ def run_random_split(args, device, tabular_dim: int):
         out_dir = ensure_dir(args.output_dir / safe_name(random_method_name))
 
         set_seed(args.seed)
-        model = model_cls(tabular_dim=tabular_dim).to(device)
+        model = model_cls(tabular_dim=tabular_dim, num_classes=num_classes).to(device)
         model = train_one_model(model, train_graphs, val_graphs, args, device, f"{method_name} | random_split")
 
         metric_rows = []
@@ -300,12 +308,15 @@ def run_random_split(args, device, tabular_dim: int):
             "state_dict": model.state_dict(),
             "model_class": model_cls.__name__,
             "tabular_dim": tabular_dim,
+            "num_classes": num_classes,
+            "class_labels": class_labels,
+            "class_names": class_names,
         }, out_dir / "model.pt")
         if preprocessor is not None:
             joblib.dump(preprocessor, out_dir / "tabular_preprocessor.joblib")
         pd.DataFrame(metric_rows).to_csv(out_dir / "metrics.csv", index=False)
-        write_json(out_dir / "metadata.json", metadata_payload(args, random_method_name, tabular_dim, "random 80/10/10", out_dir))
-        write_json(out_dir / "feature_schema.json", feature_schema(args, tabular_dim))
+        write_json(out_dir / "metadata.json", metadata_payload(args, random_method_name, tabular_dim, "random 80/10/10", out_dir, class_labels))
+        write_json(out_dir / "feature_schema.json", feature_schema(args, tabular_dim, class_labels))
         print(f"{random_method_name}: saved outputs -> {out_dir}", flush=True)
         rows.append(manifest_row(random_method_name, out_dir, val_metrics, test_metrics))
 
@@ -318,6 +329,10 @@ def run_random_split(args, device, tabular_dim: int):
 def run_cv(args, device, tabular_dim: int):
     trainval_raw = usable_frame(args.trainval_subset, args.target_col, "trainval")
     test_raw = usable_frame(args.test_subset, args.target_col, "test")
+    class_labels = infer_class_labels(trainval_raw[args.target_col], test_raw[args.target_col])
+    class_names = class_names_for(class_labels)
+    num_classes = len(class_labels)
+    print("Class labels:", class_labels, flush=True)
     if "cv_fold" not in trainval_raw.columns:
         raise ValueError("trainval subset is missing cv_fold.")
 
@@ -349,10 +364,10 @@ def run_cv(args, device, tabular_dim: int):
             val_graphs, val_frame = graph_dataset(val_frame, args.target_col, transform_tabular(val_frame, args.tabular_cols, preprocessor))
 
             set_seed(args.seed + fold)
-            model = model_cls(tabular_dim=tabular_dim).to(device)
+            model = model_cls(tabular_dim=tabular_dim, num_classes=num_classes).to(device)
             model = train_one_model(model, train_graphs, val_graphs, args, device, f"{method_name} | fold_{fold}")
             y_true, y_pred, proba, row_idx = predict(model, val_graphs, args, device)
-            metrics = classification_metrics(y_true, y_pred, proba)
+            metrics = classification_metrics(y_true, y_pred, proba, class_labels=class_labels)
             metrics.update({"method": method_name, "split": f"fold_{fold}", "fold": fold, "validation_study": validation_studies})
             metric_rows.append(metrics)
             print(f"{method_name} | fold_{fold}: {format_metrics(metrics)}", flush=True)
@@ -362,8 +377,8 @@ def run_cv(args, device, tabular_dim: int):
             pred_df["cv_fold"] = fold
             pred_df["y_true"] = y_true
             pred_df["y_pred"] = y_pred
-            for cls in CLASS_LABELS:
-                pred_df[f"prob_{CLASS_NAMES[cls]}"] = proba[:, cls]
+            for i, cls in enumerate(class_labels):
+                pred_df[f"prob_{class_names[cls]}"] = proba[:, i]
             cv_predictions.append(pred_df)
 
         cv_mean, cv_std = summarize_cv(metric_rows)
@@ -377,7 +392,7 @@ def run_cv(args, device, tabular_dim: int):
         test_graphs, test = graph_dataset(test_raw, args.target_col, transform_tabular(test_raw, args.tabular_cols, final_preprocessor))
         print(f"{method_name}: fitting final model on all trainval graphs...", flush=True)
         set_seed(args.seed)
-        final_model = model_cls(tabular_dim=tabular_dim).to(device)
+        final_model = model_cls(tabular_dim=tabular_dim, num_classes=num_classes).to(device)
         final_model = train_one_model(final_model, trainval_graphs, trainval_graphs, args, device, f"{method_name} | final_trainval")
 
         y_true, y_pred, proba, row_idx = predict(final_model, test_graphs, args, device)
@@ -390,13 +405,16 @@ def run_cv(args, device, tabular_dim: int):
             "state_dict": final_model.state_dict(),
             "model_class": model_cls.__name__,
             "tabular_dim": tabular_dim,
+            "num_classes": num_classes,
+            "class_labels": class_labels,
+            "class_names": class_names,
         }, out_dir / "model.pt")
         if final_preprocessor is not None:
             joblib.dump(final_preprocessor, out_dir / "tabular_preprocessor.joblib")
         pd.concat(cv_predictions, ignore_index=True).to_csv(out_dir / "cv_predictions.csv", index=False)
         pd.DataFrame(metric_rows).to_csv(out_dir / "metrics.csv", index=False)
-        write_json(out_dir / "metadata.json", metadata_payload(args, method_name, tabular_dim, args.cv_description, out_dir))
-        write_json(out_dir / "feature_schema.json", feature_schema(args, tabular_dim))
+        write_json(out_dir / "metadata.json", metadata_payload(args, method_name, tabular_dim, args.cv_description, out_dir, class_labels))
+        write_json(out_dir / "feature_schema.json", feature_schema(args, tabular_dim, class_labels))
         print(f"{method_name}: saved outputs -> {out_dir}", flush=True)
         rows.append(manifest_row(method_name, out_dir, cv_mean, test_metrics, cv_prefix="cv", test_prefix="test"))
 
@@ -406,22 +424,28 @@ def run_cv(args, device, tabular_dim: int):
     print(manifest.to_string(index=False), flush=True)
 
 
-def feature_schema(args, tabular_dim: int) -> dict:
+def feature_schema(args, tabular_dim: int, class_labels: list[int] | None = None) -> dict:
+    class_labels = class_labels or CLASS_LABELS
+    class_names = class_names_for(class_labels)
     return {
         "graph_featurization": "rdkit atom/bond graph from il_smiles/canonical_il_smiles",
         "tabular_columns": args.tabular_cols,
         "tabular_dim": tabular_dim,
-        "n_classes": len(CLASS_LABELS),
-        "class_names": CLASS_NAMES,
+        "n_classes": len(class_labels),
+        "class_labels": class_labels,
+        "class_names": class_names,
     }
 
 
-def metadata_payload(args, method_name: str, tabular_dim: int, cv_description: str, out_dir: Path) -> dict:
+def metadata_payload(args, method_name: str, tabular_dim: int, cv_description: str, out_dir: Path, class_labels: list[int] | None = None) -> dict:
+    class_labels = class_labels or CLASS_LABELS
+    class_names = class_names_for(class_labels)
     return {
         "method": method_name,
         "feature_set": "graph_only" if tabular_dim == 0 else "graph_plus_tabular_context",
         "target": args.target_col,
-        "class_names": CLASS_NAMES,
+        "class_labels": class_labels,
+        "class_names": class_names,
         "trainval_path": str(args.trainval_subset) if args.trainval_subset else None,
         "train_path": str(args.train_subset) if args.train_subset else None,
         "validation_path": str(args.validation_subset) if args.validation_subset else None,

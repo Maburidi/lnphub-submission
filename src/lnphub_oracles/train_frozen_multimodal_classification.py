@@ -14,10 +14,12 @@ from .train_frozen_classification import (
     CLASS_NAMES,
     DEFAULT_ENCODERS,
     PRETTY,
+    class_names_for,
     classification_metrics,
     fit_classifier,
     format_metrics,
     id_columns,
+    infer_class_labels,
     make_classifier,
     predict_proba_fixed,
     safe_name,
@@ -85,7 +87,7 @@ def clean_subset(frame: pd.DataFrame, target_col: str, split_name: str) -> pd.Da
         raise ValueError(f"{split_name} subset is missing target column: {target_col}")
     frame[target_col] = pd.to_numeric(frame[target_col], errors="coerce")
     before = len(frame)
-    frame = frame[frame[target_col].isin(CLASS_LABELS)].copy()
+    frame = frame[frame[target_col].notna()].copy()
     frame[target_col] = frame[target_col].astype(int)
     print(f"{split_name}: {before:,} -> {len(frame):,} rows with usable class labels", flush=True)
     print(f"{split_name} class counts: {dict(frame[target_col].value_counts().sort_index())}", flush=True)
@@ -155,25 +157,27 @@ def evaluate_split(model, X, y, frame, split_name: str):
     row_sums = proba.sum(axis=1, keepdims=True)
     proba = np.divide(proba, row_sums, out=np.full_like(proba, 1.0 / proba.shape[1]), where=row_sums > 0)
     pred = np.argmax(proba, axis=1)
-    metrics = classification_metrics(y, pred, proba)
+    class_labels = infer_class_labels(y, pred, proba)
+    class_names = class_names_for(class_labels)
+    metrics = classification_metrics(y, pred, proba, class_labels=class_labels)
     metrics.update({"split": split_name})
 
     pred_df = frame[id_columns(frame)].copy()
     pred_df["split"] = split_name
     pred_df["y_true"] = y
     pred_df["y_pred"] = pred
-    for cls in CLASS_LABELS:
-        pred_df[f"prob_{CLASS_NAMES[cls]}"] = proba[:, cls]
+    for i, cls in enumerate(class_labels):
+        pred_df[f"prob_{class_names[cls]}"] = proba[:, i]
 
-    cm = confusion_matrix(y, pred, labels=CLASS_LABELS)
+    cm = confusion_matrix(y, pred, labels=class_labels)
     cm_df = pd.DataFrame(
         cm,
-        index=[f"true_{CLASS_NAMES[c]}" for c in CLASS_LABELS],
-        columns=[f"pred_{CLASS_NAMES[c]}" for c in CLASS_LABELS],
+        index=[f"true_{class_names[c]}" for c in class_labels],
+        columns=[f"pred_{class_names[c]}" for c in class_labels],
     )
-    per_class = precision_recall_fscore_support(y, pred, labels=CLASS_LABELS, zero_division=0)
+    per_class = precision_recall_fscore_support(y, pred, labels=class_labels, zero_division=0)
     per_class_df = pd.DataFrame({
-        "class": [CLASS_NAMES[c] for c in CLASS_LABELS],
+        "class": [class_names[c] for c in class_labels],
         "precision": per_class[0],
         "recall": per_class[1],
         "f1": per_class[2],
