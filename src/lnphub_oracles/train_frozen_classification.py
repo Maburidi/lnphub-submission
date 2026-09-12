@@ -54,6 +54,7 @@ ID_COLS = {
 }
 CLASS_LABELS = [0, 1, 2]
 CLASS_NAMES = {0: "low", 1: "medium", 2: "high"}
+FOUR_CLASS_NAMES = {0: "low", 1: "low_intermediate", 2: "high_intermediate", 3: "high"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -172,24 +173,53 @@ def fit_classifier(model, kind: str, X_train, y_train, X_val=None, y_val=None):
     return model
 
 
-def predict_proba_fixed(model, X: np.ndarray) -> np.ndarray:
+def infer_class_labels(y_true=None, y_pred=None, proba=None, model_classes=None) -> list[int]:
+    labels: set[int] = set()
+    for values in [y_true, y_pred, model_classes]:
+        if values is None:
+            continue
+        arr = np.asarray(values)
+        if arr.size:
+            labels.update(int(v) for v in arr.ravel() if np.isfinite(v))
+    if proba is not None:
+        proba = np.asarray(proba)
+        if proba.ndim == 2 and proba.shape[1] > 0:
+            if not labels or (min(labels) >= 0 and max(labels) < proba.shape[1]):
+                labels.update(range(proba.shape[1]))
+    return sorted(labels) if labels else list(CLASS_LABELS)
+
+
+def class_names_for(class_labels: list[int]) -> dict[int, str]:
+    if class_labels == [0, 1, 2, 3]:
+        return FOUR_CLASS_NAMES.copy()
+    names = CLASS_NAMES.copy()
+    return {label: names.get(label, f"class_{label}") for label in class_labels}
+
+
+def predict_proba_fixed(model, X: np.ndarray, class_labels: list[int] | None = None) -> np.ndarray:
     proba = np.asarray(model.predict_proba(X), dtype=float)
     classes = getattr(model, "classes_", None)
     if classes is None and hasattr(model, "named_steps"):
         classes = getattr(model.named_steps.get("model"), "classes_", None)
+    if class_labels is None:
+        class_labels = infer_class_labels(proba=proba, model_classes=classes)
     if classes is None:
+        if proba.shape[1] == len(class_labels):
+            return proba
         return proba
-    fixed = np.zeros((len(X), len(CLASS_LABELS)), dtype=float)
+    fixed = np.zeros((len(X), len(class_labels)), dtype=float)
+    label_to_col = {int(label): idx for idx, label in enumerate(class_labels)}
     for j, cls in enumerate(classes):
         cls = int(cls)
-        if cls in CLASS_LABELS:
-            fixed[:, CLASS_LABELS.index(cls)] = proba[:, j]
+        if cls in label_to_col:
+            fixed[:, label_to_col[cls]] = proba[:, j]
     return fixed
 
 
-def classification_metrics(y_true, y_pred, proba) -> dict[str, float]:
+def classification_metrics(y_true, y_pred, proba, class_labels: list[int] | None = None) -> dict[str, float]:
     y_true = np.asarray(y_true, dtype=int)
     y_pred = np.asarray(y_pred, dtype=int)
+    class_labels = infer_class_labels(y_true, y_pred, proba) if class_labels is None else list(class_labels)
     out = {
         "n": int(len(y_true)),
         "accuracy": float(accuracy_score(y_true, y_pred)),
@@ -199,16 +229,16 @@ def classification_metrics(y_true, y_pred, proba) -> dict[str, float]:
         "mcc": float(matthews_corrcoef(y_true, y_pred)),
     }
     try:
-        out["roc_auc_ovr_macro"] = float(roc_auc_score(y_true, proba, labels=CLASS_LABELS, multi_class="ovr", average="macro"))
+        out["roc_auc_ovr_macro"] = float(roc_auc_score(y_true, proba, labels=class_labels, multi_class="ovr", average="macro"))
     except Exception:
         out["roc_auc_ovr_macro"] = np.nan
     try:
-        y_bin = label_binarize(y_true, classes=CLASS_LABELS)
+        y_bin = label_binarize(y_true, classes=class_labels)
         out["average_precision_macro"] = float(average_precision_score(y_bin, proba, average="macro"))
     except Exception:
         out["average_precision_macro"] = np.nan
     try:
-        out["log_loss"] = float(log_loss(y_true, proba, labels=CLASS_LABELS))
+        out["log_loss"] = float(log_loss(y_true, proba, labels=class_labels))
     except Exception:
         out["log_loss"] = np.nan
     return out
