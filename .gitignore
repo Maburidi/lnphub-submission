@@ -8,3 +8,8 @@ __pycache__/
 results/
 trained_oracles/
 encoded_exact_frozen_cohort/
+
+# Generated VLS outputs and large prediction artifacts
+vls/consensus_predictions/
+vls/all_clean_vls/
+vls/VL_*.csv

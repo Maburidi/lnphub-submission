@@ -61,7 +61,7 @@ def parse_args() -> argparse.Namespace:
         description="Train 3-class ECFP4/RDKit descriptor classifiers with formulation and physicochemical covariates."
     )
     parser.add_argument("--trainval-subset", required=True, type=Path)
-    parser.add_argument("--test-subset", required=True, type=Path)
+    parser.add_argument("--test-subset", type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--target-col", default="delivery_class_3")
     parser.add_argument("--multimodal-cols", nargs="+", default=DEFAULT_MULTIMODAL_COLS)
@@ -129,7 +129,10 @@ def main() -> None:
     ensure_dir(args.output_dir)
 
     trainval, y, smiles = load_subset(args.trainval_subset, args.target_col, args.multimodal_cols, "trainval")
-    test, y_test, test_smiles = load_subset(args.test_subset, args.target_col, args.multimodal_cols, "untouched_test")
+    if args.test_subset is not None:
+        test, y_test, test_smiles = load_subset(args.test_subset, args.target_col, args.multimodal_cols, "untouched_test")
+    else:
+        test = y_test = test_smiles = None
 
     if "cv_fold" not in trainval.columns:
         raise ValueError("trainval subset is missing cv_fold. Run the notebook split cell first.")
@@ -155,26 +158,34 @@ def main() -> None:
             feature_cache[molecular_type] = build_features(trainval, smiles, molecular_type, args.multimodal_cols)
         X, feature_cols, mol_cols, multi_cols = feature_cache[molecular_type]
 
-        if molecular_type not in test_feature_cache:
-            print(f"Building {molecular_type} + multimodal untouched-test features...", flush=True)
-            test_feature_cache[molecular_type] = build_features(test, test_smiles, molecular_type, args.multimodal_cols)
-        X_test, test_feature_cols, _, _ = test_feature_cache[molecular_type]
-        if feature_cols != test_feature_cols:
-            raise ValueError(f"Feature mismatch for {method_name}")
+        if test is not None:
+            if molecular_type not in test_feature_cache:
+                print(f"Building {molecular_type} + multimodal untouched-test features...", flush=True)
+                test_feature_cache[molecular_type] = build_features(test, test_smiles, molecular_type, args.multimodal_cols)
+            X_test, test_feature_cols, _, _ = test_feature_cache[molecular_type]
+            if feature_cols != test_feature_cols:
+                raise ValueError(f"Feature mismatch for {method_name}")
+        else:
+            X_test = None
 
         ok = np.isfinite(X).all(axis=1)
-        test_ok = np.isfinite(X_test).all(axis=1)
-        if int((~ok).sum()) or int((~test_ok).sum()):
+        test_ok = np.isfinite(X_test).all(axis=1) if X_test is not None else np.asarray([], dtype=bool)
+        if int((~ok).sum()) or (X_test is not None and int((~test_ok).sum())):
             print(
-                f"{method_name}: dropping non-finite feature rows trainval={(~ok).sum():,}, test={(~test_ok).sum():,}",
+                f"{method_name}: dropping non-finite feature rows trainval={(~ok).sum():,}, "
+                f"test={(~test_ok).sum() if X_test is not None else 0:,}",
                 flush=True,
             )
         X_fit, y_fit, frame_fit = X[ok], y[ok], trainval.loc[ok].reset_index(drop=True)
-        X_eval, y_eval, test_eval = X_test[test_ok], y_test[test_ok], test.loc[test_ok].reset_index(drop=True)
+        if X_test is not None:
+            X_eval, y_eval, test_eval = X_test[test_ok], y_test[test_ok], test.loc[test_ok].reset_index(drop=True)
+            test_shape = f"; test={X_eval.shape[0]:,} x {X_eval.shape[1]:,}"
+        else:
+            X_eval = y_eval = test_eval = None
+            test_shape = ""
 
         print(
-            f"Feature matrix: trainval={X_fit.shape[0]:,} x {X_fit.shape[1]:,}; "
-            f"test={X_eval.shape[0]:,} x {X_eval.shape[1]:,}",
+            f"Feature matrix: trainval={X_fit.shape[0]:,} x {X_fit.shape[1]:,}{test_shape}",
             flush=True,
         )
         print(f"Molecular features: {len(mol_cols):,}; appended numeric features: {len(multi_cols):,}", flush=True)
@@ -229,38 +240,41 @@ def main() -> None:
         fit_classifier(final_model, estimator_kind, X_fit, y_fit)
         print(f"{method_name}: final model fit complete", flush=True)
 
-        test_proba = predict_proba_fixed(final_model, X_eval)
-        test_pred = np.argmax(test_proba, axis=1)
-        test_metrics = classification_metrics(y_eval, test_pred, test_proba)
-        test_metrics.update({"method": method_name, "split": "untouched_test", "fold": -1, "validation_study": ", ".join(sorted(test_eval["study_id"].astype(str).unique()))})
-        metric_rows.append(test_metrics)
-        all_metric_rows.append(test_metrics)
-        print(f"{method_name} | untouched_test: {format_metrics(test_metrics)}", flush=True)
+        test_metrics = {}
+        if X_eval is not None:
+            test_proba = predict_proba_fixed(final_model, X_eval)
+            test_pred = np.argmax(test_proba, axis=1)
+            test_metrics = classification_metrics(y_eval, test_pred, test_proba)
+            test_metrics.update({"method": method_name, "split": "untouched_test", "fold": -1, "validation_study": ", ".join(sorted(test_eval["study_id"].astype(str).unique()))})
+            metric_rows.append(test_metrics)
+            all_metric_rows.append(test_metrics)
+            print(f"{method_name} | untouched_test: {format_metrics(test_metrics)}", flush=True)
 
-        test_pred_df = test_eval[id_columns(test_eval)].copy()
-        test_pred_df["split"] = "untouched_test"
-        test_pred_df["y_true"] = y_eval
-        test_pred_df["y_pred"] = test_pred
-        for cls in CLASS_LABELS:
-            test_pred_df[f"prob_{CLASS_NAMES[cls]}"] = test_proba[:, cls]
+            test_pred_df = test_eval[id_columns(test_eval)].copy()
+            test_pred_df["split"] = "untouched_test"
+            test_pred_df["y_true"] = y_eval
+            test_pred_df["y_pred"] = test_pred
+            for cls in CLASS_LABELS:
+                test_pred_df[f"prob_{CLASS_NAMES[cls]}"] = test_proba[:, cls]
 
-        cm = confusion_matrix(y_eval, test_pred, labels=CLASS_LABELS)
-        cm_df = pd.DataFrame(cm, index=[f"true_{CLASS_NAMES[c]}" for c in CLASS_LABELS], columns=[f"pred_{CLASS_NAMES[c]}" for c in CLASS_LABELS])
-        per_class = precision_recall_fscore_support(y_eval, test_pred, labels=CLASS_LABELS, zero_division=0)
-        per_class_df = pd.DataFrame({
-            "class": [CLASS_NAMES[c] for c in CLASS_LABELS],
-            "precision": per_class[0],
-            "recall": per_class[1],
-            "f1": per_class[2],
-            "support": per_class[3],
-        })
+            cm = confusion_matrix(y_eval, test_pred, labels=CLASS_LABELS)
+            cm_df = pd.DataFrame(cm, index=[f"true_{CLASS_NAMES[c]}" for c in CLASS_LABELS], columns=[f"pred_{CLASS_NAMES[c]}" for c in CLASS_LABELS])
+            per_class = precision_recall_fscore_support(y_eval, test_pred, labels=CLASS_LABELS, zero_division=0)
+            per_class_df = pd.DataFrame({
+                "class": [CLASS_NAMES[c] for c in CLASS_LABELS],
+                "precision": per_class[0],
+                "recall": per_class[1],
+                "f1": per_class[2],
+                "support": per_class[3],
+            })
 
         joblib.dump(final_model, out_dir / "model.joblib")
         pd.concat(cv_predictions, ignore_index=True).to_csv(out_dir / "cv_predictions.csv", index=False)
-        test_pred_df.to_csv(out_dir / "untouched_test_predictions.csv", index=False)
         pd.DataFrame(metric_rows).to_csv(out_dir / "metrics.csv", index=False)
-        cm_df.to_csv(out_dir / "untouched_test_confusion_matrix.csv")
-        per_class_df.to_csv(out_dir / "untouched_test_per_class_metrics.csv", index=False)
+        if X_eval is not None:
+            test_pred_df.to_csv(out_dir / "untouched_test_predictions.csv", index=False)
+            cm_df.to_csv(out_dir / "untouched_test_confusion_matrix.csv")
+            per_class_df.to_csv(out_dir / "untouched_test_per_class_metrics.csv", index=False)
         write_json(out_dir / "feature_schema.json", {
             "feature_columns": feature_cols,
             "molecular_feature_columns": mol_cols,
@@ -277,7 +291,7 @@ def main() -> None:
             "target": args.target_col,
             "class_names": CLASS_NAMES,
             "trainval_path": str(args.trainval_subset),
-            "untouched_test_path": str(args.test_subset),
+            "untouched_test_path": str(args.test_subset) if args.test_subset else None,
             "cv": args.cv_description,
             "untouched_test_used_for_training": False,
             "trained_at_utc": now_utc(),

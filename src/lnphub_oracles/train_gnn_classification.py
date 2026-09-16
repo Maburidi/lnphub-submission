@@ -43,7 +43,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--trainval-subset", type=Path)
     parser.add_argument("--train-subset", type=Path)
     parser.add_argument("--validation-subset", type=Path)
-    parser.add_argument("--test-subset", required=True, type=Path)
+    parser.add_argument("--test-subset", type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--target-col", default="delivery_class_3")
     parser.add_argument("--methods", nargs="+", default=list(MODELS))
@@ -63,6 +63,8 @@ def parse_args() -> argparse.Namespace:
         raise ValueError("Use either --trainval-subset for CV mode, or --train-subset plus --validation-subset for random-split mode.")
     if random_mode and (args.train_subset is None or args.validation_subset is None):
         raise ValueError("Random-split mode requires both --train-subset and --validation-subset.")
+    if random_mode and args.test_subset is None:
+        raise ValueError("Random-split mode requires --test-subset.")
     return args
 
 
@@ -328,8 +330,8 @@ def run_random_split(args, device, tabular_dim: int):
 
 def run_cv(args, device, tabular_dim: int):
     trainval_raw = usable_frame(args.trainval_subset, args.target_col, "trainval")
-    test_raw = usable_frame(args.test_subset, args.target_col, "test")
-    class_labels = infer_class_labels(trainval_raw[args.target_col], test_raw[args.target_col])
+    test_raw = usable_frame(args.test_subset, args.target_col, "test") if args.test_subset is not None else None
+    class_labels = infer_class_labels(trainval_raw[args.target_col], test_raw[args.target_col]) if test_raw is not None else infer_class_labels(trainval_raw[args.target_col])
     class_names = class_names_for(class_labels)
     num_classes = len(class_labels)
     print("Class labels:", class_labels, flush=True)
@@ -389,17 +391,19 @@ def run_cv(args, device, tabular_dim: int):
 
         final_preprocessor = fit_tabular_preprocessor(trainval_raw, args.tabular_cols)
         trainval_graphs, trainval = graph_dataset(trainval_raw, args.target_col, transform_tabular(trainval_raw, args.tabular_cols, final_preprocessor))
-        test_graphs, test = graph_dataset(test_raw, args.target_col, transform_tabular(test_raw, args.tabular_cols, final_preprocessor))
         print(f"{method_name}: fitting final model on all trainval graphs...", flush=True)
         set_seed(args.seed)
         final_model = model_cls(tabular_dim=tabular_dim, num_classes=num_classes).to(device)
         final_model = train_one_model(final_model, trainval_graphs, trainval_graphs, args, device, f"{method_name} | final_trainval")
 
-        y_true, y_pred, proba, row_idx = predict(final_model, test_graphs, args, device)
-        test_metrics = save_eval_tables(out_dir, test, y_true, y_pred, proba, row_idx, "test")
-        test_metrics.update({"method": method_name, "split": "test", "fold": -1, "validation_study": ", ".join(sorted(test["study_id"].astype(str).unique()))})
-        metric_rows.append(test_metrics)
-        print(f"{method_name} | test: {format_metrics(test_metrics)}", flush=True)
+        test_metrics = {}
+        if test_raw is not None:
+            test_graphs, test = graph_dataset(test_raw, args.target_col, transform_tabular(test_raw, args.tabular_cols, final_preprocessor))
+            y_true, y_pred, proba, row_idx = predict(final_model, test_graphs, args, device)
+            test_metrics = save_eval_tables(out_dir, test, y_true, y_pred, proba, row_idx, "test")
+            test_metrics.update({"method": method_name, "split": "test", "fold": -1, "validation_study": ", ".join(sorted(test["study_id"].astype(str).unique()))})
+            metric_rows.append(test_metrics)
+            print(f"{method_name} | test: {format_metrics(test_metrics)}", flush=True)
 
         torch.save({
             "state_dict": final_model.state_dict(),
@@ -449,7 +453,7 @@ def metadata_payload(args, method_name: str, tabular_dim: int, cv_description: s
         "trainval_path": str(args.trainval_subset) if args.trainval_subset else None,
         "train_path": str(args.train_subset) if args.train_subset else None,
         "validation_path": str(args.validation_subset) if args.validation_subset else None,
-        "test_path": str(args.test_subset),
+        "test_path": str(args.test_subset) if args.test_subset else None,
         "cv": cv_description,
         "tabular_columns": args.tabular_cols,
         "test_used_for_training": False,
@@ -459,6 +463,7 @@ def metadata_payload(args, method_name: str, tabular_dim: int, cv_description: s
 
 
 def manifest_row(method_name: str, out_dir: Path, primary_metrics: dict, test_metrics: dict, cv_prefix: str = "validation", test_prefix: str = "test") -> dict:
+    test_metrics = test_metrics or {}
     row = {
         "method": method_name,
         "output_dir": str(out_dir),

@@ -62,7 +62,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--trainval-subset", type=Path)
     parser.add_argument("--train-subset", type=Path)
     parser.add_argument("--validation-subset", type=Path)
-    parser.add_argument("--test-subset", required=True, type=Path)
+    parser.add_argument("--test-subset", type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--repo-dir", default=Path("/content/notebooks/encoder_repos"), type=Path)
     parser.add_argument("--target-col", default="delivery_class_3")
@@ -90,6 +90,8 @@ def parse_args() -> argparse.Namespace:
         raise ValueError("Use either --trainval-subset for CV mode, or --train-subset plus --validation-subset for random-split mode.")
     if random_mode and (args.train_subset is None or args.validation_subset is None):
         raise ValueError("Random-split mode requires both --train-subset and --validation-subset.")
+    if random_mode and args.test_subset is None:
+        raise ValueError("Random-split mode requires --test-subset.")
     return args
 
 
@@ -487,16 +489,17 @@ def save_outputs(
     for name, table in prediction_tables.items():
         table.to_csv(out_dir / f"{name}.csv", index=False)
     pd.DataFrame(metric_rows).to_csv(out_dir / "metrics.csv", index=False)
-    cm = confusion_matrix(test_y, test_pred, labels=CLASS_LABELS)
-    pd.DataFrame(cm, index=[f"true_{CLASS_NAMES[c]}" for c in CLASS_LABELS], columns=[f"pred_{CLASS_NAMES[c]}" for c in CLASS_LABELS]).to_csv(out_dir / "test_confusion_matrix.csv")
-    per_class = precision_recall_fscore_support(test_y, test_pred, labels=CLASS_LABELS, zero_division=0)
-    pd.DataFrame({
-        "class": [CLASS_NAMES[c] for c in CLASS_LABELS],
-        "precision": per_class[0],
-        "recall": per_class[1],
-        "f1": per_class[2],
-        "support": per_class[3],
-    }).to_csv(out_dir / "test_per_class_metrics.csv", index=False)
+    if test_y is not None and test_pred is not None:
+        cm = confusion_matrix(test_y, test_pred, labels=CLASS_LABELS)
+        pd.DataFrame(cm, index=[f"true_{CLASS_NAMES[c]}" for c in CLASS_LABELS], columns=[f"pred_{CLASS_NAMES[c]}" for c in CLASS_LABELS]).to_csv(out_dir / "test_confusion_matrix.csv")
+        per_class = precision_recall_fscore_support(test_y, test_pred, labels=CLASS_LABELS, zero_division=0)
+        pd.DataFrame({
+            "class": [CLASS_NAMES[c] for c in CLASS_LABELS],
+            "precision": per_class[0],
+            "recall": per_class[1],
+            "f1": per_class[2],
+            "support": per_class[3],
+        }).to_csv(out_dir / "test_per_class_metrics.csv", index=False)
     write_json(out_dir / "feature_schema.json", {
         "molecular_input": "fine-tuned pretrained molecular encoder",
         "tabular_columns": args.tabular_cols,
@@ -511,7 +514,7 @@ def save_outputs(
         "trainval_path": str(args.trainval_subset) if args.trainval_subset else None,
         "train_path": str(args.train_subset) if args.train_subset else None,
         "validation_path": str(args.validation_subset) if args.validation_subset else None,
-        "test_path": str(args.test_subset),
+        "test_path": str(args.test_subset) if args.test_subset else None,
         "tabular_columns": args.tabular_cols,
         "test_used_for_training": False,
         "epochs_max": args.epochs,
@@ -548,20 +551,21 @@ def save_external_outputs(
     for name, table in prediction_tables.items():
         table.to_csv(out_dir / f"{name}.csv", index=False)
     pd.DataFrame(metric_rows).to_csv(out_dir / "metrics.csv", index=False)
-    cm = confusion_matrix(test_y, test_pred, labels=CLASS_LABELS)
-    pd.DataFrame(
-        cm,
-        index=[f"true_{CLASS_NAMES[c]}" for c in CLASS_LABELS],
-        columns=[f"pred_{CLASS_NAMES[c]}" for c in CLASS_LABELS],
-    ).to_csv(out_dir / "test_confusion_matrix.csv")
-    per_class = precision_recall_fscore_support(test_y, test_pred, labels=CLASS_LABELS, zero_division=0)
-    pd.DataFrame({
-        "class": [CLASS_NAMES[c] for c in CLASS_LABELS],
-        "precision": per_class[0],
-        "recall": per_class[1],
-        "f1": per_class[2],
-        "support": per_class[3],
-    }).to_csv(out_dir / "test_per_class_metrics.csv", index=False)
+    if test_y is not None and test_pred is not None:
+        cm = confusion_matrix(test_y, test_pred, labels=CLASS_LABELS)
+        pd.DataFrame(
+            cm,
+            index=[f"true_{CLASS_NAMES[c]}" for c in CLASS_LABELS],
+            columns=[f"pred_{CLASS_NAMES[c]}" for c in CLASS_LABELS],
+        ).to_csv(out_dir / "test_confusion_matrix.csv")
+        per_class = precision_recall_fscore_support(test_y, test_pred, labels=CLASS_LABELS, zero_division=0)
+        pd.DataFrame({
+            "class": [CLASS_NAMES[c] for c in CLASS_LABELS],
+            "precision": per_class[0],
+            "recall": per_class[1],
+            "f1": per_class[2],
+            "support": per_class[3],
+        }).to_csv(out_dir / "test_per_class_metrics.csv", index=False)
     write_json(out_dir / "metadata.json", {
         "method": method_name,
         "status": "trained",
@@ -570,7 +574,7 @@ def save_external_outputs(
         "trainval_path": str(args.trainval_subset) if args.trainval_subset else None,
         "train_path": str(args.train_subset) if args.train_subset else None,
         "validation_path": str(args.validation_subset) if args.validation_subset else None,
-        "test_path": str(args.test_subset),
+        "test_path": str(args.test_subset) if args.test_subset else None,
         "tabular_columns": args.tabular_cols,
         "test_used_for_training": False,
         "epochs_max": args.epochs,
@@ -587,6 +591,7 @@ def save_external_outputs(
 
 
 def metrics_row(method_name: str, status: str, out_dir: Path, primary: dict, test: dict, prefix: str) -> dict:
+    test = test or {}
     row = {"method": method_name, "status": status, "output_dir": str(out_dir)}
     for metric in ["accuracy", "balanced_accuracy", "macro_f1", "roc_auc_ovr_macro", "average_precision_macro", "mcc", "log_loss"]:
         row[f"{prefix}_{metric}"] = primary.get(metric)
@@ -927,16 +932,29 @@ def train_lion_cv(trainval, test, args):
     cv_mean, cv_std = cv_mean_std(metric_rows)
     cv_mean.update({"method": method_name}); cv_std.update({"method": method_name})
     metric_rows += [cv_mean, cv_std]
-    _, test_pred, _, test_metrics = run_lion_train_predict(trainval.reset_index(drop=True), None, test.reset_index(drop=True), args, method_name, out_dir / "final_trainval")
-    assert test_metrics is not None and test_pred is not None
-    test_metrics.update({"method": method_name, "split": "test", "fold": -1})
-    metric_rows.append(test_metrics)
+    test_metrics = {}
+    prediction_tables = {"cv_predictions": pd.concat(cv_predictions, ignore_index=True)}
+    test_y = test_pred_y = None
+    _, test_pred, _, maybe_test_metrics = run_lion_train_predict(
+        trainval.reset_index(drop=True),
+        None,
+        test.reset_index(drop=True) if test is not None else None,
+        args,
+        method_name,
+        out_dir / "final_trainval",
+    )
+    if test is not None:
+        test_metrics = maybe_test_metrics
+        assert test_metrics is not None and test_pred is not None
+        test_metrics.update({"method": method_name, "split": "test", "fold": -1})
+        metric_rows.append(test_metrics)
+        prediction_tables["test_predictions"] = test_pred
+        test_y = test[args.target_col].to_numpy(dtype=int)
+        test_pred_y = test_pred["y_pred"].to_numpy(dtype=int)
     print(f"{method_name} | cv_mean: {format_metrics(cv_mean)}", flush=True)
-    print(f"{method_name} | test: {format_metrics(test_metrics)}", flush=True)
-    save_external_outputs(args.output_dir, method_name, metric_rows, {
-        "cv_predictions": pd.concat(cv_predictions, ignore_index=True),
-        "test_predictions": test_pred,
-    }, test[args.target_col].to_numpy(dtype=int), test_pred["y_pred"].to_numpy(dtype=int), args, {
+    if test_metrics:
+        print(f"{method_name} | test: {format_metrics(test_metrics)}", flush=True)
+    save_external_outputs(args.output_dir, method_name, metric_rows, prediction_tables, test_y, test_pred_y, args, {
         "method_key": "lion",
         "model_type": "chemprop_lnpdb_lion_multiclass_finetune",
         "encoder_trainable": True,
@@ -1131,16 +1149,29 @@ def train_unimol_cv(trainval, test, args):
     cv_mean, cv_std = cv_mean_std(metric_rows)
     cv_mean.update({"method": method_name}); cv_std.update({"method": method_name})
     metric_rows += [cv_mean, cv_std]
-    _, test_pred, _, test_metrics = unimol_fit_predict(trainval.reset_index(drop=True), None, test.reset_index(drop=True), args, method_name, out_dir / "final_trainval")
-    assert test_metrics is not None and test_pred is not None
-    test_metrics.update({"method": method_name, "split": "test", "fold": -1})
-    metric_rows.append(test_metrics)
+    test_metrics = {}
+    prediction_tables = {"cv_predictions": pd.concat(cv_predictions, ignore_index=True)}
+    test_y = test_pred_y = None
+    _, test_pred, _, maybe_test_metrics = unimol_fit_predict(
+        trainval.reset_index(drop=True),
+        None,
+        test.reset_index(drop=True) if test is not None else None,
+        args,
+        method_name,
+        out_dir / "final_trainval",
+    )
+    if test is not None:
+        test_metrics = maybe_test_metrics
+        assert test_metrics is not None and test_pred is not None
+        test_metrics.update({"method": method_name, "split": "test", "fold": -1})
+        metric_rows.append(test_metrics)
+        prediction_tables["test_predictions"] = test_pred
+        test_y = test[args.target_col].to_numpy(dtype=int)
+        test_pred_y = test_pred["y_pred"].to_numpy(dtype=int)
     print(f"{method_name} | cv_mean: {format_metrics(cv_mean)}", flush=True)
-    print(f"{method_name} | test: {format_metrics(test_metrics)}", flush=True)
-    save_external_outputs(args.output_dir, method_name, metric_rows, {
-        "cv_predictions": pd.concat(cv_predictions, ignore_index=True),
-        "test_predictions": test_pred,
-    }, test[args.target_col].to_numpy(dtype=int), test_pred["y_pred"].to_numpy(dtype=int), args, {
+    if test_metrics:
+        print(f"{method_name} | test: {format_metrics(test_metrics)}", flush=True)
+    save_external_outputs(args.output_dir, method_name, metric_rows, prediction_tables, test_y, test_pred_y, args, {
         "method_key": "uni_mol",
         "model_type": "official_unimol_tools_moltrain_multiclass_with_optional_tabular_late_fusion",
         "encoder_trainable": True,
@@ -1236,21 +1267,23 @@ def train_hf_cv(key, trainval, test, args, device, tabular_dim):
     metric_rows += [cv_mean, cv_std]
     prep = fit_tabular_preprocessor(trainval, args.tabular_cols)
     trainval_ds = hf_dataset(trainval, args.target_col, tokenizer, transform_tabular(trainval, args.tabular_cols, prep))
-    test_ds = hf_dataset(test, args.target_col, tokenizer, transform_tabular(test, args.tabular_cols, prep))
     final = HFMultimodalClassifier(model_id, trust_remote_code, tabular_dim=tabular_dim).to(device)
     train_loop(final, DataLoader(trainval_ds, batch_size=args.batch_size, shuffle=True), DataLoader(trainval_ds, batch_size=args.batch_size), args, device, method_name, "final_trainval")
-    yt, pt, probt, idt = predict_proba(final, DataLoader(test_ds, batch_size=args.batch_size), device)
-    test_metrics = classification_metrics(yt, pt, probt); test_metrics.update({"method": method_name, "split": "test", "fold": -1})
-    metric_rows.append(test_metrics)
     print(f"{method_name} | cv_mean: {format_metrics(cv_mean)}", flush=True)
-    print(f"{method_name} | test: {format_metrics(test_metrics)}", flush=True)
+    test_metrics = {}
+    prediction_tables = {"cv_predictions": pd.concat(cv_predictions, ignore_index=True)}
+    yt = pt = None
+    if test is not None:
+        test_ds = hf_dataset(test, args.target_col, tokenizer, transform_tabular(test, args.tabular_cols, prep))
+        yt, pt, probt, idt = predict_proba(final, DataLoader(test_ds, batch_size=args.batch_size), device)
+        test_metrics = classification_metrics(yt, pt, probt); test_metrics.update({"method": method_name, "split": "test", "fold": -1})
+        metric_rows.append(test_metrics)
+        prediction_tables["test_predictions"] = save_prediction_frame(test, "test", yt, pt, probt, idt)
+        print(f"{method_name} | test: {format_metrics(test_metrics)}", flush=True)
     out_dir = method_dir(args.output_dir, method_name)
     tokenizer.save_pretrained(out_dir / "tokenizer")
     final.encoder.save_pretrained(out_dir / "encoder")
-    save_outputs(args.output_dir, method_name, final, metric_rows, {
-        "cv_predictions": pd.concat(cv_predictions, ignore_index=True),
-        "test_predictions": save_prediction_frame(test, "test", yt, pt, probt, idt),
-    }, yt, pt, args, {"model_id": model_id, "method_key": key, "model_type": "hf_sequence_encoder_classifier", "encoder_trainable": True}, prep)
+    save_outputs(args.output_dir, method_name, final, metric_rows, prediction_tables, yt, pt, args, {"model_id": model_id, "method_key": key, "model_type": "hf_sequence_encoder_classifier", "encoder_trainable": True}, prep)
     return metrics_row(method_name, "trained", out_dir, cv_mean, test_metrics, "cv")
 
 
@@ -1288,20 +1321,22 @@ def train_gnn_cv(key, trainval, test, args, device, tabular_dim):
     metric_rows += [cv_mean, cv_std]
     prep = fit_tabular_preprocessor(trainval, args.tabular_cols)
     tv_graphs, trainval = build_pretrained_graphs(trainval, args.target_col, transform_tabular(trainval, args.tabular_cols, prep))
-    test_graphs, test = build_pretrained_graphs(test, args.target_col, transform_tabular(test, args.tabular_cols, prep))
     encoder = encoder_class(num_layer=5, emb_dim=300, feat_dim=512, drop_ratio=0, pool="mean").to(device)
     encoder.load_state_dict(load_state_dict(ckpt_path, device), strict=False)
     final = PretrainedGNNMultimodalClassifier(encoder, tabular_dim=tabular_dim).to(device)
     train_loop(final, GraphLoader(tv_graphs, batch_size=args.batch_size, shuffle=True), GraphLoader(tv_graphs, batch_size=args.batch_size), args, device, method_name, "final_trainval")
-    yt, pt, probt, idt = predict_proba(final, GraphLoader(test_graphs, batch_size=args.batch_size), device)
-    test_metrics = classification_metrics(yt, pt, probt); test_metrics.update({"method": method_name, "split": "test", "fold": -1})
-    metric_rows.append(test_metrics)
     print(f"{method_name} | cv_mean: {format_metrics(cv_mean)}", flush=True)
-    print(f"{method_name} | test: {format_metrics(test_metrics)}", flush=True)
-    out_dir = save_outputs(args.output_dir, method_name, final, metric_rows, {
-        "cv_predictions": pd.concat(cv_predictions, ignore_index=True),
-        "test_predictions": save_prediction_frame(test, "test", yt, pt, probt, idt),
-    }, yt, pt, args, {"method_key": key, "model_type": "pretrained_gnn_classifier", "repo": str(repo), "checkpoint": str(ckpt_path), "encoder_trainable": True}, prep)
+    test_metrics = {}
+    prediction_tables = {"cv_predictions": pd.concat(cv_predictions, ignore_index=True)}
+    yt = pt = None
+    if test is not None:
+        test_graphs, test = build_pretrained_graphs(test, args.target_col, transform_tabular(test, args.tabular_cols, prep))
+        yt, pt, probt, idt = predict_proba(final, GraphLoader(test_graphs, batch_size=args.batch_size), device)
+        test_metrics = classification_metrics(yt, pt, probt); test_metrics.update({"method": method_name, "split": "test", "fold": -1})
+        metric_rows.append(test_metrics)
+        prediction_tables["test_predictions"] = save_prediction_frame(test, "test", yt, pt, probt, idt)
+        print(f"{method_name} | test: {format_metrics(test_metrics)}", flush=True)
+    out_dir = save_outputs(args.output_dir, method_name, final, metric_rows, prediction_tables, yt, pt, args, {"method_key": key, "model_type": "pretrained_gnn_classifier", "repo": str(repo), "checkpoint": str(ckpt_path), "encoder_trainable": True}, prep)
     return metrics_row(method_name, "trained", out_dir, cv_mean, test_metrics, "cv")
 
 
@@ -1320,7 +1355,7 @@ def main() -> None:
     manifest_rows = []
     if args.trainval_subset is not None:
         trainval = clean_frame(args.trainval_subset, args.target_col, "trainval")
-        test = clean_frame(args.test_subset, args.target_col, "test")
+        test = clean_frame(args.test_subset, args.target_col, "test") if args.test_subset is not None else None
         for method in args.methods:
             key = normalize_method_key(method)
             print("\n" + "=" * 80, flush=True)
@@ -1328,13 +1363,13 @@ def main() -> None:
             print("=" * 80, flush=True)
             try:
                 if key in HF_METHODS:
-                    manifest_rows.append(train_hf_cv(key, trainval.copy(), test.copy(), args, device, tabular_dim))
+                    manifest_rows.append(train_hf_cv(key, trainval.copy(), test.copy() if test is not None else None, args, device, tabular_dim))
                 elif key in GNN_METHODS:
-                    manifest_rows.append(train_gnn_cv(key, trainval.copy(), test.copy(), args, device, tabular_dim))
+                    manifest_rows.append(train_gnn_cv(key, trainval.copy(), test.copy() if test is not None else None, args, device, tabular_dim))
                 elif key == "lion":
-                    manifest_rows.append(train_lion_cv(trainval.copy(), test.copy(), args))
+                    manifest_rows.append(train_lion_cv(trainval.copy(), test.copy() if test is not None else None, args))
                 elif key in {"uni_mol", "unimol"}:
-                    manifest_rows.append(train_unimol_cv(trainval.copy(), test.copy(), args))
+                    manifest_rows.append(train_unimol_cv(trainval.copy(), test.copy() if test is not None else None, args))
                 else:
                     manifest_rows.append(write_unavailable(args.output_dir, method, "Unknown method key."))
             except Exception as exc:
