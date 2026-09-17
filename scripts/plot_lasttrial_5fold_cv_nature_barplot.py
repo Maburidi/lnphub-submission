@@ -26,18 +26,23 @@ from matplotlib.patches import Patch
 # 1. Load data
 # ============================================================
 
-# Prefer the full merged 5-fold CV summary if it exists.
-# Fall back to the recovered Colab-display summary.
-CSV_PATH = Path(
-    "results/multimodal_lasttrial_5fold_cv/merged_results/"
-    "lasttrial_5fold_cv_summary_mean_std.csv"
-)
-
-if not CSV_PATH.exists():
+# Prefer an explicit path supplied by the notebook/CLI.
+# Otherwise use the full merged 5-fold CV summary if it exists, with
+# fallback to the recovered Colab-display summary.
+CSV_PATH = os.environ.get("LNP_LASTTRIAL_5FOLD_CSV")
+if CSV_PATH:
+    CSV_PATH = Path(CSV_PATH)
+else:
     CSV_PATH = Path(
         "results/multimodal_lasttrial_5fold_cv/merged_results/"
-        "lasttrial_5fold_cv_summary_mean_std_recovered_from_colab_display.csv"
+        "lasttrial_5fold_cv_summary_mean_std.csv"
     )
+
+    if not CSV_PATH.exists():
+        CSV_PATH = Path(
+            "results/multimodal_lasttrial_5fold_cv/merged_results/"
+            "lasttrial_5fold_cv_summary_mean_std_recovered_from_colab_display.csv"
+        )
 
 df = pd.read_csv(CSV_PATH)
 
@@ -53,7 +58,7 @@ df = pd.read_csv(CSV_PATH)
 # "average_precision_macro"
 # "accuracy"
 
-METRIC = "roc_auc_ovr_macro"
+METRIC = os.environ.get("LNP_LASTTRIAL_5FOLD_METRIC", "roc_auc_ovr_macro")
 VALUE_COL = f"{METRIC}_mean" if f"{METRIC}_mean" in df.columns else METRIC
 ERROR_COL = f"{METRIC}_std" if f"{METRIC}_std" in df.columns else None
 
@@ -691,8 +696,10 @@ plt.subplots_adjust(
 # ============================================================
 
 out_dir = Path(
-    "results/multimodal_lasttrial_5fold_cv/merged_results/"
-    "publication_barplots"
+    os.environ.get(
+        "LNP_LASTTRIAL_5FOLD_FIGURE_DIR",
+        "results/multimodal_lasttrial_5fold_cv/merged_results/publication_barplots",
+    )
 )
 out_dir.mkdir(parents=True, exist_ok=True)
 
