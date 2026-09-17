@@ -53,7 +53,30 @@ def feature_set_label(cols: list[str]) -> str:
         return "Formulation"
     if cols == DEFAULT_MULTIMODAL_COLS:
         return "Formulation/PhysChem"
-    return "Selected Covariates"
+    col_set = set(cols)
+    has_context = any(str(col).startswith("context_") for col in cols)
+    physchem_cols = {
+        "particle_size_nm",
+        "pdi",
+        "zeta_potential_mv",
+        "encapsulation_efficiency_percent",
+        "measured_pka",
+    }
+    has_physchem = bool(col_set & physchem_cols)
+    has_formulation = bool(col_set & set(FORMULATION_ONLY_COLS))
+    if has_formulation and has_context and has_physchem:
+        return "Formulation + Context + PhysChem"
+    if has_formulation and has_context:
+        return "Formulation + Context"
+    if has_formulation and has_physchem:
+        return "Formulation + PhysChem"
+    if has_context and has_physchem:
+        return "Context + PhysChem"
+    if has_context:
+        return "Context"
+    if has_physchem:
+        return "PhysChem"
+    return "Tabular Features"
 
 
 def parse_args() -> argparse.Namespace:
