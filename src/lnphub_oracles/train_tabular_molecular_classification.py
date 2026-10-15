@@ -38,7 +38,7 @@ METHODS = {
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train molecular-only 3-class ECFP4/RDKit descriptor classifiers.")
     parser.add_argument("--trainval-subset", required=True, type=Path)
-    parser.add_argument("--test-subset", required=True, type=Path)
+    parser.add_argument("--test-subset", type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--target-col", default="delivery_class_3")
     parser.add_argument("--methods", nargs="+", default=list(METHODS))
@@ -107,7 +107,10 @@ def main() -> None:
     args = parse_args()
     ensure_dir(args.output_dir)
     trainval, y, smiles = load_molecular_subset(args.trainval_subset, args.target_col, "trainval")
-    test, y_test, test_smiles = load_molecular_subset(args.test_subset, args.target_col, "test")
+    if args.test_subset is not None:
+        test, y_test, test_smiles = load_molecular_subset(args.test_subset, args.target_col, "test")
+    else:
+        test = y_test = test_smiles = None
     if "cv_fold" not in trainval.columns:
         raise ValueError("trainval subset is missing cv_fold.")
 
@@ -128,18 +131,26 @@ def main() -> None:
             print(f"Building {molecular_type} trainval features...", flush=True)
             feature_cache[molecular_type] = build_molecular_features(smiles, molecular_type)
         X, feature_cols = feature_cache[molecular_type]
-        if molecular_type not in test_feature_cache:
-            print(f"Building {molecular_type} test features...", flush=True)
-            test_feature_cache[molecular_type] = build_molecular_features(test_smiles, molecular_type)
-        X_test, test_feature_cols = test_feature_cache[molecular_type]
-        if feature_cols != test_feature_cols:
-            raise ValueError(f"Feature mismatch for {method_name}")
+        if test is not None:
+            if molecular_type not in test_feature_cache:
+                print(f"Building {molecular_type} test features...", flush=True)
+                test_feature_cache[molecular_type] = build_molecular_features(test_smiles, molecular_type)
+            X_test, test_feature_cols = test_feature_cache[molecular_type]
+            if feature_cols != test_feature_cols:
+                raise ValueError(f"Feature mismatch for {method_name}")
+        else:
+            X_test = None
 
         ok = np.isfinite(X).all(axis=1)
-        test_ok = np.isfinite(X_test).all(axis=1)
         X_fit, y_fit, frame_fit = X[ok], y[ok], trainval.loc[ok].reset_index(drop=True)
-        X_eval, y_eval, test_eval = X_test[test_ok], y_test[test_ok], test.loc[test_ok].reset_index(drop=True)
-        print(f"Feature matrix: trainval={X_fit.shape[0]:,} x {X_fit.shape[1]:,}; test={X_eval.shape[0]:,} x {X_eval.shape[1]:,}", flush=True)
+        if X_test is not None:
+            test_ok = np.isfinite(X_test).all(axis=1)
+            X_eval, y_eval, test_eval = X_test[test_ok], y_test[test_ok], test.loc[test_ok].reset_index(drop=True)
+            test_shape = f"; test={X_eval.shape[0]:,} x {X_eval.shape[1]:,}"
+        else:
+            X_eval = y_eval = test_eval = None
+            test_shape = ""
+        print(f"Feature matrix: trainval={X_fit.shape[0]:,} x {X_fit.shape[1]:,}{test_shape}", flush=True)
 
         out_dir = ensure_dir(Path(args.output_dir) / safe_name(method_name))
         cv_predictions = []
@@ -182,13 +193,15 @@ def main() -> None:
         print(f"{method_name}: fitting final model on all trainval rows...", flush=True)
         fit_classifier(final_model, estimator_kind, X_fit, y_fit)
         print(f"{method_name}: final model fit complete", flush=True)
-        test_proba = predict_proba_fixed(final_model, X_eval)
-        test_pred = np.argmax(test_proba, axis=1)
-        test_metrics = _save_eval_tables(out_dir, test_eval, y_eval, test_pred, test_proba, "test")
-        test_metrics.update({"method": method_name, "split": "test", "fold": -1, "validation_study": ", ".join(sorted(test_eval["study_id"].astype(str).unique()))})
-        metric_rows.append(test_metrics)
-        all_metric_rows.append(test_metrics)
-        print(f"{method_name} | test: {format_metrics(test_metrics)}", flush=True)
+        test_metrics = {}
+        if X_eval is not None:
+            test_proba = predict_proba_fixed(final_model, X_eval)
+            test_pred = np.argmax(test_proba, axis=1)
+            test_metrics = _save_eval_tables(out_dir, test_eval, y_eval, test_pred, test_proba, "test")
+            test_metrics.update({"method": method_name, "split": "test", "fold": -1, "validation_study": ", ".join(sorted(test_eval["study_id"].astype(str).unique()))})
+            metric_rows.append(test_metrics)
+            all_metric_rows.append(test_metrics)
+            print(f"{method_name} | test: {format_metrics(test_metrics)}", flush=True)
 
         joblib.dump(final_model, out_dir / "model.joblib")
         pd.concat(cv_predictions, ignore_index=True).to_csv(out_dir / "cv_predictions.csv", index=False)
@@ -211,7 +224,7 @@ def main() -> None:
             "target": args.target_col,
             "class_names": CLASS_NAMES,
             "trainval_path": str(args.trainval_subset),
-            "test_path": str(args.test_subset),
+            "test_path": str(args.test_subset) if args.test_subset else None,
             "cv": args.cv_description,
             "test_used_for_training": False,
             "trained_at_utc": now_utc(),

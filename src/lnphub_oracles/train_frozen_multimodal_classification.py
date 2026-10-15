@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--trainval-subset", type=Path)
     parser.add_argument("--train-subset", type=Path)
     parser.add_argument("--validation-subset", type=Path)
-    parser.add_argument("--test-subset", required=True, type=Path)
+    parser.add_argument("--test-subset", type=Path)
     parser.add_argument("--encoded-dirs", nargs="+", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--target-col", default="delivery_class_3")
@@ -55,6 +55,8 @@ def parse_args() -> argparse.Namespace:
         raise ValueError("Use either --trainval-subset for CV mode, or --train-subset plus --validation-subset for random-split mode.")
     if random_mode and (args.train_subset is None or args.validation_subset is None):
         raise ValueError("Random-split mode requires both --train-subset and --validation-subset.")
+    if random_mode and args.test_subset is None:
+        raise ValueError("Random-split mode requires --test-subset.")
     return args
 
 
@@ -225,7 +227,7 @@ def save_common_outputs(
         "trainval_path": str(args.trainval_subset) if args.trainval_subset else None,
         "train_path": str(args.train_subset) if args.train_subset else None,
         "validation_path": str(args.validation_subset) if args.validation_subset else None,
-        "test_path": str(args.test_subset),
+        "test_path": str(args.test_subset) if args.test_subset else None,
         "encoded_vector_files": [str(p) for p in encoded_paths],
         "split_strategy": split_strategy,
         "test_used_for_training": False,
@@ -326,7 +328,7 @@ def run_random(args) -> pd.DataFrame:
 
 def run_cv(args) -> pd.DataFrame:
     trainval_subset = clean_subset(read_table(args.trainval_subset), args.target_col, "trainval")
-    test_subset = clean_subset(read_table(args.test_subset), args.target_col, "test")
+    test_subset = clean_subset(read_table(args.test_subset), args.target_col, "test") if args.test_subset is not None else None
     if "cv_fold" not in trainval_subset.columns:
         raise ValueError("trainval subset is missing cv_fold.")
     folds = sorted(int(f) for f in trainval_subset["cv_fold"].dropna().unique() if int(f) >= 0)
@@ -352,18 +354,23 @@ def run_cv(args) -> pd.DataFrame:
             encoded, trainval_subset, id_col=args.id_col, target_col=args.target_col,
             tabular_cols=args.tabular_cols, require_complete_coverage=args.require_complete_coverage,
         )
-        test, X_test, y_test, _, test_feature_cols = align_features(
-            encoded, test_subset, id_col=args.id_col, target_col=args.target_col,
-            tabular_cols=args.tabular_cols, require_complete_coverage=args.require_complete_coverage,
-        )
-        if feature_cols != test_feature_cols:
-            raise ValueError(f"Feature mismatch for {method_name}")
+        if test_subset is not None:
+            test, X_test, y_test, _, test_feature_cols = align_features(
+                encoded, test_subset, id_col=args.id_col, target_col=args.target_col,
+                tabular_cols=args.tabular_cols, require_complete_coverage=args.require_complete_coverage,
+            )
+            if feature_cols != test_feature_cols:
+                raise ValueError(f"Feature mismatch for {method_name}")
+        else:
+            test = X_test = y_test = None
 
         print(f"Vector files: {', '.join(str(p) for p in paths)}", flush=True)
-        print(f"Feature matrix: trainval={X.shape[0]:,} x {X.shape[1]:,}; test={X_test.shape[0]:,}", flush=True)
+        test_part = f"; test={X_test.shape[0]:,}" if X_test is not None else ""
+        print(f"Feature matrix: trainval={X.shape[0]:,} x {X.shape[1]:,}{test_part}", flush=True)
         print(f"Frozen embedding features: {len(vector_cols):,}; appended extra-layer features: {len(args.tabular_cols):,}", flush=True)
         print("Trainval classes:", dict(pd.Series(y).value_counts().sort_index()), flush=True)
-        print("Test classes:", dict(pd.Series(y_test).value_counts().sort_index()), flush=True)
+        if y_test is not None:
+            print("Test classes:", dict(pd.Series(y_test).value_counts().sort_index()), flush=True)
 
         out_dir = ensure_dir(args.output_dir / safe_name(method_name))
         cv_predictions = []
@@ -401,11 +408,19 @@ def run_cv(args) -> pd.DataFrame:
         fit_classifier(final_model, args.estimator, X, y)
         print(f"{method_name}: final model fit complete", flush=True)
 
-        test_metrics, test_pred, test_cm, test_per_class = evaluate_split(final_model, X_test, y_test, test, "test")
-        test_metrics.update({"method": method_name, "encoder": encoder, "fold": -1, "validation_study": ", ".join(sorted(test["study_id"].astype(str).unique()))})
-        metric_rows.append(test_metrics)
-        all_metric_rows.append(test_metrics)
-        print(f"{method_name} | test: {format_metrics(test_metrics)}", flush=True)
+        test_metrics = {}
+        extra_tables = {"cv_predictions": pd.concat(cv_predictions, ignore_index=True)}
+        if X_test is not None:
+            test_metrics, test_pred, test_cm, test_per_class = evaluate_split(final_model, X_test, y_test, test, "test")
+            test_metrics.update({"method": method_name, "encoder": encoder, "fold": -1, "validation_study": ", ".join(sorted(test["study_id"].astype(str).unique()))})
+            metric_rows.append(test_metrics)
+            all_metric_rows.append(test_metrics)
+            print(f"{method_name} | test: {format_metrics(test_metrics)}", flush=True)
+            extra_tables.update({
+                "test_predictions": test_pred,
+                "test_confusion_matrix": test_cm,
+                "test_per_class_metrics": test_per_class,
+            })
 
         save_common_outputs(
             out_dir=out_dir,
@@ -419,12 +434,7 @@ def run_cv(args) -> pd.DataFrame:
             args=args,
             method_name=method_name,
             split_strategy=args.cv_description,
-            extra_tables={
-                "cv_predictions": pd.concat(cv_predictions, ignore_index=True),
-                "test_predictions": test_pred,
-                "test_confusion_matrix": test_cm,
-                "test_per_class_metrics": test_per_class,
-            },
+            extra_tables=extra_tables,
         )
         print(f"{method_name}: saved outputs -> {out_dir}", flush=True)
         manifest_rows.append(manifest_row(method_name, encoder, out_dir, "trained", cv_mean, test_metrics, "cv"))
@@ -440,6 +450,7 @@ def run_cv(args) -> pd.DataFrame:
 
 
 def manifest_row(method_name: str, encoder: str, out_dir: Path, status: str, primary_metrics: dict, test_metrics: dict, primary_prefix: str) -> dict:
+    test_metrics = test_metrics or {}
     row = {
         "method": method_name,
         "encoder": encoder,
