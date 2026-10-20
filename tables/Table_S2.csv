@@ -1,0 +1,106 @@
+screen_id,study_id,records,unique_lnps,unique_ionizable_lipids,experimental_setting,cargo_type,biological_model,biological_target,route_of_administration,delivery_metric
+LNPhub_JW_2024 | in_vitro | mRNA | A549 | lung_epithelium | Not reported | expression,LNPhub_JW_2024,1644,1585,161,in_vitro,mRNA,A549,lung_epithelium,Not reported,expression
+LNPhub_KZ_2016 | in_vitro | siRNA | HeLa | Not reported | Not reported | expression_discretized,LNPhub_KZ_2016,1512,1512,1470,in_vitro,siRNA,HeLa,Not reported,Not reported,expression_discretized
+LNPhub_YX_2024 | in_vitro | mRNA | HeLa | Not reported | Not reported | expression,LNPhub_YX_2024,1200,1200,1200,in_vitro,mRNA,HeLa,Not reported,Not reported,expression
+LNPhub_YX_2024 | in_vitro | mRNA | RAW264.7 | Not reported | Not reported | expression,LNPhub_YX_2024,1200,1200,1200,in_vitro,mRNA,RAW264.7,Not reported,Not reported,expression
+LNPhub_KW_2014 | in_vitro | siRNA | HeLa | Not reported | Not reported | expression,LNPhub_KW_2014,1182,1175,1150,in_vitro,siRNA,HeLa,Not reported,Not reported,expression
+LNPhub_LM_2019 | in_vitro | mRNA | HeLa | Not reported | Not reported | expression,LNPhub_LM_2019,1080,1080,1080,in_vitro,mRNA,HeLa,Not reported,Not reported,expression
+LNPhub_YZ_2022 | in_vitro | pDNA | HepG2 | Not reported | Not reported | expression,LNPhub_YZ_2022,1080,1080,1,in_vitro,pDNA,HepG2,Not reported,Not reported,expression
+LNPhub_YZ_2024 | in_vitro | mRNA | DC2.4 | Not reported | Not reported | expression,LNPhub_YZ_2024,1080,1080,1,in_vitro,mRNA,DC2.4,Not reported,Not reported,expression
+LNPhub_FG_2026 | in_vitro | mRNA | BEAS-2B | bronchial_epithelium | Not reported | expression_discretized,LNPhub_FG_2026,980,960,960,in_vitro,mRNA,BEAS-2B,bronchial_epithelium,Not reported,expression_discretized
+LNPhub_BL_2023 | in_vitro | mRNA | A549 | Not reported | Not reported | expression,LNPhub_BL_2023,720,720,709,in_vitro,mRNA,A549,Not reported,Not reported,expression
+LNPhub_JL_2024 | in_vitro | mRNA | DC2.4 | Not reported | Not reported | expression,LNPhub_JL_2024,623,623,623,in_vitro,mRNA,DC2.4,Not reported,Not reported,expression
+LNPhub_SL_2021 | in_vitro | mRNA | IGROV1 | Not reported | Not reported | expression_discretized,LNPhub_SL_2021,572,572,572,in_vitro,mRNA,IGROV1,Not reported,Not reported,expression_discretized
+LNPhub_BL_2024 | in_vitro | mRNA | HeLa | Not reported | Not reported | expression,LNPhub_BL_2024,560,560,560,in_vitro,mRNA,HeLa,Not reported,Not reported,expression
+LNPhub_XH_2025 | in_vitro | mRNA | HepG2 | Not reported | Not reported | expression_discretized,LNPhub_XH_2025,500,500,500,in_vitro,mRNA,HepG2,Not reported,Not reported,expression_discretized
+LNPhub_AA_2008 | in_vitro | siRNA | HeLa | Not reported | Not reported | expression_discretized,LNPhub_AA_2008,497,497,487,in_vitro,siRNA,HeLa,Not reported,Not reported,expression_discretized
+LNPhub_BL_2023b | in_vivo | mRNA | Mouse_C57BL/6J | muscle | intramuscular | expression_discretized,LNPhub_BL_2023b,480,480,480,in_vivo,mRNA,Mouse_C57BL/6J,muscle,intramuscular,expression_discretized
+LNPhub_AJ_2023 | in_vitro | mRNA | Not reported | Not reported | Not reported | expression,LNPhub_AJ_2023,360,360,47,in_vitro,mRNA,Not reported,Not reported,Not reported,expression
+LNPhub_QL_2026 | in_vitro | mRNA | HeLa | Not reported | Not reported | expression_discretized,LNPhub_QL_2026,344,344,344,in_vitro,mRNA,HeLa,Not reported,Not reported,expression_discretized
+LNPhub_JC_2023 | in_vitro | mRNA | HeLa | Not reported | Not reported | expression,LNPhub_JC_2023,288,288,288,in_vitro,mRNA,HeLa,Not reported,Not reported,expression
+LNPhub_YR_2024 | in_vitro | mRNA | HeLa | Not reported | Not reported | expression_discretized,LNPhub_YR_2024,286,286,286,in_vitro,mRNA,HeLa,Not reported,Not reported,expression_discretized
+LNPhub_LX_2024b | in_vitro | mRNA | HeLa | Not reported | Not reported | expression,LNPhub_LX_2024b,270,270,270,in_vitro,mRNA,HeLa,Not reported,Not reported,expression
+LNPhub_NC_2024 | in_vitro | mRNA | BeWo_b30 | Not reported | Not reported | expression,LNPhub_NC_2024,260,260,260,in_vitro,mRNA,BeWo_b30,Not reported,Not reported,expression
+LNPhub_NG_2025 | in_vitro | mRNA | MC38 | colon_cancer_cells | Not reported | expression,LNPhub_NG_2025,258,258,258,in_vitro,mRNA,MC38,colon_cancer_cells,Not reported,expression
+LNPhub_LX_2024c | in_vitro | mRNA | HepG2 | Not reported | Not reported | expression,LNPhub_LX_2024c,252,252,252,in_vitro,mRNA,HepG2,Not reported,Not reported,expression
+LNPhub_YX_2023 | in_vitro | mRNA | HeLa | Not reported | Not reported | expression_discretized,LNPhub_YX_2023,248,248,176,in_vitro,mRNA,HeLa,Not reported,Not reported,expression_discretized
+LNPhub_SW_2024 | in_vitro | mRNA | IGROV1 | Not reported | Not reported | expression_discretized,LNPhub_SW_2024,180,180,180,in_vitro,mRNA,IGROV1,Not reported,Not reported,expression_discretized
+LNPhub_LX_2024 | in_vitro | mRNA | HeLa | Not reported | Not reported | expression,LNPhub_LX_2024,180,165,165,in_vitro,mRNA,HeLa,Not reported,Not reported,expression
+LNPhub_ZH_2023 | in_vivo | mRNA | Mouse_C57BL/6 | liver | intravenous | expression,LNPhub_ZH_2023,163,162,161,in_vivo,mRNA,Mouse_C57BL/6,liver,intravenous,expression
+LNPhub_ZH_2023 | in_vivo | mRNA | Mouse_C57BL/6 | spleen | intravenous | expression,LNPhub_ZH_2023,162,161,160,in_vivo,mRNA,Mouse_C57BL/6,spleen,intravenous,expression
+LNPhub_ZL_2022 | in_vitro | mRNA | HEK293T | Not reported | Not reported | expression,LNPhub_ZL_2022,144,144,144,in_vitro,mRNA,HEK293T,Not reported,Not reported,expression
+LNPhub_KS_2024 | in_vitro | mRNA | IGROV1 | Not reported | Not reported | expression,LNPhub_KS_2024,140,140,140,in_vitro,mRNA,IGROV1,Not reported,Not reported,expression
+LNPhub_JK_2026 | in_vitro | mRNA | DC2.4 | dendritic_cells | Not reported | expression,LNPhub_JK_2026,139,136,68,in_vitro,mRNA,DC2.4,dendritic_cells,Not reported,expression
+LNPhub_YY_2023 | in_vitro | mRNA | IGROV1 | Not reported | Not reported | expression_discretized,LNPhub_YY_2023,119,119,119,in_vitro,mRNA,IGROV1,Not reported,Not reported,expression_discretized
+LNPhub_CW_2025 | in_vitro | mRNA | HaCaT | keratinocytes | Not reported | expression,LNPhub_CW_2025,100,100,100,in_vitro,mRNA,HaCaT,keratinocytes,Not reported,expression
+LNPhub_XH_2024c | in_vitro | mRNA | HepG2 | Not reported | Not reported | expression,LNPhub_XH_2024c,124,100,100,in_vitro,mRNA,HepG2,Not reported,Not reported,expression
+LNPhub_ZC_2023 | in_vitro | mRNA | IGROV1 | Not reported | Not reported | expression_discretized,LNPhub_ZC_2023,100,100,100,in_vitro,mRNA,IGROV1,Not reported,Not reported,expression_discretized
+LNPhub_AP_2025 | in_vivo | mRNA | Mouse_BALBc | muscle | intramuscular | expression,LNPhub_AP_2025,91,91,91,in_vivo,mRNA,Mouse_BALBc,muscle,intramuscular,expression
+LNPhub_SL_2020 | in_vitro | mRNA | IGROV1 | Not reported | Not reported | expression_discretized,LNPhub_SL_2020,91,91,63,in_vitro,mRNA,IGROV1,Not reported,Not reported,expression_discretized
+LNPhub_XH_2024b | in_vitro | mRNA | HepG2 | Not reported | Not reported | expression,LNPhub_XH_2024b,90,90,90,in_vitro,mRNA,HepG2,Not reported,Not reported,expression
+LNPhub_JL_2023 | in_vivo | mRNA | Mouse_BALBc | multiorgan | intravenous | expression,LNPhub_JL_2023,88,88,88,in_vivo,mRNA,Mouse_BALBc,multiorgan,intravenous,expression
+LNPhub_JM_2016 | in_vitro | siRNA | HeLa | Not reported | Not reported | expression_discretized,LNPhub_JM_2016,72,72,72,in_vitro,siRNA,HeLa,Not reported,Not reported,expression_discretized
+LNPhub_YX_2025 | in_vitro | mRNA | A549 | lung_epithelium | Not reported | expression,LNPhub_YX_2025,70,70,70,in_vitro,mRNA,A549,lung_epithelium,Not reported,expression
+LNPhub_YX_2025 | in_vitro | mRNA | MLG | pulmonary_cells | Not reported | expression,LNPhub_YX_2025,70,70,70,in_vitro,mRNA,MLG,pulmonary_cells,Not reported,expression
+LNPhub_JW_2024 | in_vivo | mRNA | Mouse_C57BL/6 | muscle | intramuscular | expression,LNPhub_JW_2024,72,70,69,in_vivo,mRNA,Mouse_C57BL/6,muscle,intramuscular,expression
+LNPhub_HL_2025 | in_vitro | mRNA | SY5Y | neuronal_cells | Not reported | expression_discretized,LNPhub_HL_2025,67,67,67,in_vitro,mRNA,SY5Y,neuronal_cells,Not reported,expression_discretized
+LNPhub_HL_2025 | in_vitro | mRNA | primary_astrocytes | Not reported | Not reported | expression_discretized,LNPhub_HL_2025,67,67,67,in_vitro,mRNA,primary_astrocytes,Not reported,Not reported,expression_discretized
+LNPhub_XH_2024b | in_vivo | mRNA | Mouse_C57BL/6 | liver | intravenous | expression,LNPhub_XH_2024b,61,61,61,in_vivo,mRNA,Mouse_C57BL/6,liver,intravenous,expression
+LNPhub_BL_2024 | in_vivo | mRNA | Mouse_C57BL/6 | muscle | intramuscular | expression,LNPhub_BL_2024,51,51,51,in_vivo,mRNA,Mouse_C57BL/6,muscle,intramuscular,expression
+LNPhub_KL_2010 | in_vitro | siRNA | HeLa | Not reported | Not reported | expression,LNPhub_KL_2010,50,50,50,in_vitro,siRNA,HeLa,Not reported,Not reported,expression
+LNPhub_LZ_2025 | in_vitro | mRNA | A549 | Not reported | Not reported | expression,LNPhub_LZ_2025,48,48,1,in_vitro,mRNA,A549,Not reported,Not reported,expression
+LNPhub_LZ_2025 | in_vitro | mRNA | HepG2 | Not reported | Not reported | expression,LNPhub_LZ_2025,48,48,1,in_vitro,mRNA,HepG2,Not reported,Not reported,expression
+LNPhub_AJ_2023 | in_vitro | mRNA | A549 | lung_epithelium | Not reported | expression,LNPhub_AJ_2023,44,44,44,in_vitro,mRNA,A549,lung_epithelium,Not reported,expression
+LNPhub_FG_2026 | in_vitro | mRNA | BEAS-2B | bronchial_epithelium | Not reported | expression,LNPhub_FG_2026,42,40,1,in_vitro,mRNA,BEAS-2B,bronchial_epithelium,Not reported,expression
+LNPhub_JK_2026 | in_vitro | mRNA | C2C12 | myoblasts | Not reported | expression,LNPhub_JK_2026,43,40,1,in_vitro,mRNA,C2C12,myoblasts,Not reported,expression
+LNPhub_LM_2019 | in_vitro | mRNA | BMDC | Not reported | Not reported | expression,LNPhub_LM_2019,36,36,36,in_vitro,mRNA,BMDC,Not reported,Not reported,expression
+LNPhub_SY_2025 | in_vivo | mRNA | Mouse_ICR | ear | intradermal | expression,LNPhub_SY_2025,36,36,19,in_vivo,mRNA,Mouse_ICR,ear,intradermal,expression
+LNPhub_BL_2023 | in_vivo | mRNA | Mouse_C57BL/6 | lung_epithelium | intratracheal | expression,LNPhub_BL_2023,49,35,26,in_vivo,mRNA,Mouse_C57BL/6,lung_epithelium,intratracheal,expression
+LNPhub_DZ_2021 | in_vitro | mRNA | HEK293T | Not reported | Not reported | expression,LNPhub_DZ_2021,31,31,31,in_vitro,mRNA,HEK293T,Not reported,Not reported,expression
+LNPhub_ZC_2023 | in_vivo | mRNA | Mouse_C57BL/6 | liver | intravenous | expression,LNPhub_ZC_2023,31,31,31,in_vivo,mRNA,Mouse_C57BL/6,liver,intravenous,expression
+LNPhub_XH_2024 | in_vitro | mRNA | HepG2 | Not reported | Not reported | expression,LNPhub_XH_2024,30,30,30,in_vitro,mRNA,HepG2,Not reported,Not reported,expression
+LNPhub_XH_2024 | in_vivo | mRNA | Mouse_C57BL/6 | liver | intravenous | expression,LNPhub_XH_2024,30,30,30,in_vivo,mRNA,Mouse_C57BL/6,liver,intravenous,expression
+LNPhub_DZ_2021 | in_vivo | mRNA | Mouse_BALBc | multiorgan | intravenous | expression,LNPhub_DZ_2021,28,28,28,in_vivo,mRNA,Mouse_BALBc,multiorgan,intravenous,expression
+LNPhub_JW_2024 | in_vitro | mRNA | HBEC_ALI | lung_epithelium | Not reported | expression,LNPhub_JW_2024,29,28,28,in_vitro,mRNA,HBEC_ALI,lung_epithelium,Not reported,expression
+LNPhub_YW_2025 | in_vitro | mRNA | 16HBE | bronchial_epithelium | Not reported | expression_discretized,LNPhub_YW_2025,25,25,25,in_vitro,mRNA,16HBE,bronchial_epithelium,Not reported,expression_discretized
+LNPhub_YW_2025 | in_vitro | mRNA | HepG2 | Not reported | Not reported | expression_discretized,LNPhub_YW_2025,25,25,25,in_vitro,mRNA,HepG2,Not reported,Not reported,expression_discretized
+LNPhub_AJ_2023 | in_vitro | mRNA | ALI_large_airway | large_airway | Not reported | expression,LNPhub_AJ_2023,28,24,24,in_vitro,mRNA,ALI_large_airway,large_airway,Not reported,expression
+LNPhub_AJ_2023 | in_vitro | mRNA | ALI_small_airway | small_airway | Not reported | expression,LNPhub_AJ_2023,28,24,24,in_vitro,mRNA,ALI_small_airway,small_airway,Not reported,expression
+LNPhub_KZ_2016 | in_vivo | siRNA | Mouse_C57BL/6 | liver | intravenous | expression_discretized,LNPhub_KZ_2016,26,24,24,in_vivo,siRNA,Mouse_C57BL/6,liver,intravenous,expression_discretized
+LNPhub_MP_2025 | in_vitro | mRNA | HeLa | Not reported | Not reported | expression,LNPhub_MP_2025,24,24,24,in_vitro,mRNA,HeLa,Not reported,Not reported,expression
+LNPhub_MP_2025 | in_vivo | mRNA | Mouse_C57BL/6J | liver | intravenous | expression,LNPhub_MP_2025,24,24,24,in_vivo,mRNA,Mouse_C57BL/6J,liver,intravenous,expression
+LNPhub_MP_2025 | in_vivo | mRNA | Mouse_C57BL/6J | whole_body | intravenous | expression,LNPhub_MP_2025,24,24,24,in_vivo,mRNA,Mouse_C57BL/6J,whole_body,intravenous,expression
+LNPhub_SB_2024 | in_vivo | mRNA | Mouse_ICR | ear | intradermal | expression,LNPhub_SB_2024,24,24,2,in_vivo,mRNA,Mouse_ICR,ear,intradermal,expression
+LNPhub_FG_2026 | in_vitro | mRNA | BEAS-2B_ALI_artificial_sputum | bronchial_epithelium | Not reported | expression_discretized,LNPhub_FG_2026,20,20,20,in_vitro,mRNA,BEAS-2B_ALI_artificial_sputum,bronchial_epithelium,Not reported,expression_discretized
+LNPhub_XG_2025 | in_vitro | mRNA | HepG2 | Not reported | Not reported | expression,LNPhub_XG_2025,34,17,15,in_vitro,mRNA,HepG2,Not reported,Not reported,expression
+LNPhub_XG_2025 | in_vivo | mRNA | Mouse_BALBc | liver | intramuscular | expression,LNPhub_XG_2025,17,17,15,in_vivo,mRNA,Mouse_BALBc,liver,intramuscular,expression
+LNPhub_XG_2025 | in_vivo | mRNA | Mouse_BALBc | liver | intravenous | expression,LNPhub_XG_2025,17,17,15,in_vivo,mRNA,Mouse_BALBc,liver,intravenous,expression
+LNPhub_XG_2025 | in_vivo | mRNA | Mouse_BALBc | muscle | intramuscular | expression,LNPhub_XG_2025,17,17,15,in_vivo,mRNA,Mouse_BALBc,muscle,intramuscular,expression
+LNPhub_MP_2025 | in_vitro | mRNA | primary_human_T_cells | activated_CD4_CD8_T_cells | Not reported | expression,LNPhub_MP_2025,16,16,16,in_vitro,mRNA,primary_human_T_cells,activated_CD4_CD8_T_cells,Not reported,expression
+LNPhub_SP_2020 | in_vitro | mRNA | HeLa | Not reported | Not reported | expression,LNPhub_SP_2020,30,13,1,in_vitro,mRNA,HeLa,Not reported,Not reported,expression
+LNPhub_GN_2025 | in_vitro | mRNA | HeLa | Not reported | Not reported | expression_discretized,LNPhub_GN_2025,36,12,12,in_vitro,mRNA,HeLa,Not reported,Not reported,expression_discretized
+LNPhub_GN_2025 | in_vitro | mRNA | HepG2 | Not reported | Not reported | expression_discretized,LNPhub_GN_2025,36,12,12,in_vitro,mRNA,HepG2,Not reported,Not reported,expression_discretized
+LNPhub_GN_2025 | in_vitro | mRNA | RAW264.7 | Not reported | Not reported | expression_discretized,LNPhub_GN_2025,36,12,12,in_vitro,mRNA,RAW264.7,Not reported,Not reported,expression_discretized
+LNPhub_GN_2025 | in_vivo | mRNA | Mouse_C57BL/6J | heart | intravenous | expression,LNPhub_GN_2025,12,12,12,in_vivo,mRNA,Mouse_C57BL/6J,heart,intravenous,expression
+LNPhub_GN_2025 | in_vivo | mRNA | Mouse_C57BL/6J | kidney | intravenous | expression,LNPhub_GN_2025,12,12,12,in_vivo,mRNA,Mouse_C57BL/6J,kidney,intravenous,expression
+LNPhub_GN_2025 | in_vivo | mRNA | Mouse_C57BL/6J | liver | intravenous | expression,LNPhub_GN_2025,12,12,12,in_vivo,mRNA,Mouse_C57BL/6J,liver,intravenous,expression
+LNPhub_GN_2025 | in_vivo | mRNA | Mouse_C57BL/6J | lung | intravenous | expression,LNPhub_GN_2025,12,12,12,in_vivo,mRNA,Mouse_C57BL/6J,lung,intravenous,expression
+LNPhub_GN_2025 | in_vivo | mRNA | Mouse_C57BL/6J | spleen | intravenous | expression,LNPhub_GN_2025,12,12,12,in_vivo,mRNA,Mouse_C57BL/6J,spleen,intravenous,expression
+LNPhub_LM_2019 | in_vitro | mRNA | BMDM | Not reported | Not reported | expression,LNPhub_LM_2019,12,12,12,in_vitro,mRNA,BMDM,Not reported,Not reported,expression
+LNPhub_MP_2025 | in_vitro | mRNA | Not reported | Not reported | Not reported | expression,LNPhub_MP_2025,12,12,12,in_vitro,mRNA,Not reported,Not reported,Not reported,expression
+LNPhub_YX_2025 | in_vivo | mRNA | Mouse_C57BL/6J | lung | intratracheal | expression,LNPhub_YX_2025,12,12,12,in_vivo,mRNA,Mouse_C57BL/6J,lung,intratracheal,expression
+LNPhub_SS_2018 | in_vivo | mRNA | Mouse_CD1 | whole_body | intravenous | expression,LNPhub_SS_2018,10,10,10,in_vivo,mRNA,Mouse_CD1,whole_body,intravenous,expression
+LNPhub_XH_2024c | in_vivo | mRNA | Mouse_C57BL/6 | muscle | intramuscular | expression,LNPhub_XH_2024c,9,9,8,in_vivo,mRNA,Mouse_C57BL/6,muscle,intramuscular,expression
+LNPhub_JK_2026 | in_vivo | mRNA | Mouse_C57BL/6 | muscle | intramuscular | expression,LNPhub_JK_2026,5,5,1,in_vivo,mRNA,Mouse_C57BL/6,muscle,intramuscular,expression
+LNPhub_JK_2026 | in_vivo | mRNA | Mouse_C57BL/6 | whole_body | intramuscular | expression,LNPhub_JK_2026,5,5,1,in_vivo,mRNA,Mouse_C57BL/6,whole_body,intramuscular,expression
+LNPhub_BL_2023 | in_vivo | mRNA | Mouse_C57BL/6 | muscle | intramuscular | expression,LNPhub_BL_2023,4,4,4,in_vivo,mRNA,Mouse_C57BL/6,muscle,intramuscular,expression
+LNPhub_XH_2024c | in_vivo | mRNA | Mouse_C57BL/6 | liver | intravenous | expression,LNPhub_XH_2024c,3,3,1,in_vivo,mRNA,Mouse_C57BL/6,liver,intravenous,expression
+LNPhub_XH_2024c | in_vivo | mRNA | Mouse_C57BL/6 | lung | intravenous | expression,LNPhub_XH_2024c,3,3,1,in_vivo,mRNA,Mouse_C57BL/6,lung,intravenous,expression
+LNPhub_XH_2024c | in_vivo | mRNA | Mouse_C57BL/6 | spleen | intravenous | expression,LNPhub_XH_2024c,3,3,1,in_vivo,mRNA,Mouse_C57BL/6,spleen,intravenous,expression
+LNPhub_AJ_2023 | in_vivo | mRNA | Mouse_C57BL/6J | lung | inhalation | expression,LNPhub_AJ_2023,24,2,2,in_vivo,mRNA,Mouse_C57BL/6J,lung,inhalation,expression
+LNPhub_AJ_2023 | in_vivo | mRNA | Mouse_C57BL/6J | nose | inhalation | expression,LNPhub_AJ_2023,10,2,2,in_vivo,mRNA,Mouse_C57BL/6J,nose,inhalation,expression
+LNPhub_DZ_2021 | in_vivo | mRNA | Mouse_BALBc | Not reported | intravenous | expression,LNPhub_DZ_2021,2,2,2,in_vivo,mRNA,Mouse_BALBc,Not reported,intravenous,expression
+LNPhub_AJ_2023 | in_vivo | mRNA | Mouse_Ai14 | large_airway | inhalation | expression,LNPhub_AJ_2023,1,1,1,in_vivo,mRNA,Mouse_Ai14,large_airway,inhalation,expression
+LNPhub_AJ_2023 | in_vivo | mRNA | Mouse_Ai14 | small_airway | inhalation | expression,LNPhub_AJ_2023,1,1,1,in_vivo,mRNA,Mouse_Ai14,small_airway,inhalation,expression
+LNPhub_AJ_2023 | in_vivo | mRNA | Mouse_Scnn1b-Tg | lung | inhalation | expression,LNPhub_AJ_2023,1,1,1,in_vivo,mRNA,Mouse_Scnn1b-Tg,lung,inhalation,expression
+LNPhub_DZ_2021 | in_vivo | mRNA | Mouse_BALBc | spleen | intravenous | expression,LNPhub_DZ_2021,1,1,1,in_vivo,mRNA,Mouse_BALBc,spleen,intravenous,expression
